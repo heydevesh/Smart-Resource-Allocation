@@ -62,3 +62,6 @@ This project solves this by digitizing the entire needs-assessment and volunteer
 * **SDG 3 (Good Health and Well-being):** Rapid response to critical medical needs through optimized assignment.
 * **SDG 4 (Quality Education):** Fulfilling educational supply/tutor needs efficiently.
 * **SDG 17 (Partnerships for Goals):** Providing a unified collaborative platform for NGOs, volunteers, and local agencies.
+
+
+***dont to anything which wourl cost me a sinlge dollor just enable the api ***
