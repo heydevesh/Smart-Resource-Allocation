@@ -1,13 +1,4 @@
-# Sahaay (formerly SevaBridge)
-
-> **💡 Suggested Prototypes Names:** 
-> 1. **Sahaay** (Sanskrit/Hindi for Help/Assistance) - *Highly recommended*
-> 2. **SevaSync** (Service + Synchronization)
-> 3. **KarunaConnect** (Compassion + Connection)
-> 4. **ReliefSync** (Modern and descriptive)
-> 5. **TaskMitra** (Task + Friend/Partner)
-> 6. **EquiServe** (Equitable Service Delivery)
-
+# Sahaay 
 ---
 
 ## 📌 Project Context
