@@ -45,16 +45,16 @@ This project solves this by digitizing the entire needs-assessment and volunteer
 * `/volunteers`: Registered community helpers with their skills, availability, and task history.
 * `/users`: Role-based user accounts and metadata.
 
-## 🚀 Prototype Build Plan (Getting Started)
+## 🚀 Prototype Build Plan (Current Status)
 
-1. **Environment Setup:** Clone the repository and configure the Flutter SDK.
-2. **Firebase Initialization:** Create a Firebase project and enable Firestore, Auth (Email/Phone), Storage, and Cloud Functions.
+1. **Environment Setup (Done ✅):** Flutter app scaffolded as `sahaay` in the repository.
+2. **Dependencies Setup (Next step):** Update `pubspec.yaml` with necessary packages (Firebase, Maps, Gemini API).
 3. **API Integrations:** 
-   * Obtain a Gemini API Key.
-   * Obtain a Google Maps API Key.
-   * Set them securely in your environment variables/cloud functions.
-4. **Deploy Cloud Functions:** Deploy the smart-matching webhook and forms integrations.
-5. **Run the App:** Execute `flutter run` on an Android physical device to thoroughly test the offline persistence & location features.
+   * Obtain a Gemini API Key and a Google Maps API Key.
+   * Connect to Firebase (Firestore, Auth, Storage).
+   * *(Note: Strict usage of free-tier features. No paid API billing enabled.)*
+4. **UI Shell Construction:** Build the bottom navigation and the 5 active tracking tabs.
+5. **Run the App:** Execute `flutter run` on an Android physical device to test offline persistence and location tracking.
 
 ## 🌍 SDG Alignment
 
