@@ -12,12 +12,8 @@ import 'screens/insights/insights_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase (will fail gracefully if not configured)
-  try {
-    await FirebaseService().initialize();
-  } catch (e) {
-    print('Firebase init failed, running in demo mode: $e');
-  }
+  // Initialize Firebase
+  await FirebaseService().initialize();
 
   runApp(
     const ProviderScope(
