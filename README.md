@@ -48,13 +48,14 @@ This project solves this by digitizing the entire needs-assessment and volunteer
 ## 🚀 Prototype Build Plan (Current Status)
 
 1. **Environment Setup (Done ✅):** Flutter app scaffolded as `sahaay` in the repository.
-2. **Dependencies Setup (Next step):** Update `pubspec.yaml` with necessary packages (Firebase, Maps, Gemini API).
+2. **Dependencies Setup (Done ✅):** Updated `pubspec.yaml` with necessary packages (Firebase, Maps, Gemini API).
 3. **API Integrations:** 
    * Obtain a Gemini API Key and a Google Maps API Key.
    * Connect to Firebase (Firestore, Auth, Storage).
    * *(Note: Strict usage of free-tier features. No paid API billing enabled.)*
-4. **UI Shell Construction:** Build the bottom navigation and the 5 active tracking tabs.
-5. **Run the App:** Execute `flutter run` on an Android physical device to test offline persistence and location tracking.
+4. **UI Shell Construction (Done ✅):** Built the bottom navigation and the 5 active tracking tabs, and responsive side navigation for Web.
+5. **Data Models (Done ✅):** Created core entities (Needs, Tasks, Volunteers).
+6. **Run the App:** Execute `flutter run` on an Android physical device to test offline persistence and location tracking.
 
 ## 🌍 SDG Alignment
 
