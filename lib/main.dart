@@ -8,6 +8,8 @@ import 'screens/needs_map/needs_map_screen.dart';
 import 'screens/tasks/tasks_screen.dart';
 import 'screens/volunteers/volunteers_screen.dart';
 import 'screens/insights/insights_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'providers/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,8 +39,12 @@ class SahaayApp extends StatelessWidget {
 }
 
 final GoRouter _appRouter = GoRouter(
-  initialLocation: '/home',
+  initialLocation: '/login',
   routes: [
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
     ShellRoute(
       builder: (context, state, child) => MainShell(child: child),
       routes: [
@@ -67,71 +73,57 @@ final GoRouter _appRouter = GoRouter(
   ],
 );
 
-class MainShell extends StatefulWidget {
+class _NavItem {
+  final String path;
+  final IconData icon;
+  final IconData selIcon;
+  final String label;
+  const _NavItem({required this.path, required this.icon, required this.selIcon, required this.label});
+}
+
+class MainShell extends ConsumerStatefulWidget {
   final Widget child;
 
   const MainShell({super.key, required this.child});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends ConsumerState<MainShell> {
   int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
+    final userModelAsync = ref.watch(userRoleProvider);
+    final isAdmin = userModelAsync.valueOrNull?.role == 'admin';
+
+    final navItems = [
+      const _NavItem(path: '/home', icon: Icons.dashboard_outlined, selIcon: Icons.dashboard, label: 'Home'),
+      const _NavItem(path: '/needs-map', icon: Icons.map_outlined, selIcon: Icons.map, label: 'Map'),
+      const _NavItem(path: '/tasks', icon: Icons.task_alt, selIcon: Icons.task, label: 'Tasks'),
+      const _NavItem(path: '/volunteers', icon: Icons.people_outline, selIcon: Icons.people, label: 'Volunteers'),
+      if (isAdmin)
+        const _NavItem(path: '/insights', icon: Icons.analytics_outlined, selIcon: Icons.analytics, label: 'Admin'),
+    ];
+
+    if (_selectedIndex >= navItems.length) {
+      _selectedIndex = 0;
+    }
+
     return Scaffold(
       body: widget.child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
           setState(() => _selectedIndex = index);
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/needs-map');
-              break;
-            case 2:
-              context.go('/tasks');
-              break;
-            case 3:
-              context.go('/volunteers');
-              break;
-            case 4:
-              context.go('/insights');
-              break;
-          }
+          context.go(navItems[index].path);
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
-            label: 'Map',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.task_alt),
-            selectedIcon: Icon(Icons.task),
-            label: 'Tasks',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: 'Volunteers',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics),
-            label: 'Insights',
-          ),
-        ],
+        destinations: navItems.map((item) => NavigationDestination(
+          icon: Icon(item.icon),
+          selectedIcon: Icon(item.selIcon),
+          label: item.label,
+        )).toList(),
       ),
     );
   }

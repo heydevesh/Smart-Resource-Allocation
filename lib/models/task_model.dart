@@ -27,7 +27,9 @@ class TaskModel {
       volunteerIds: List<String>.from(json['volunteerIds'] ?? []),
       status: json['status'] ?? 'active',
       progress: json['progress'] ?? 0,
-      dueAt: json['dueAt']?.toDate() ?? DateTime.now(),
+      dueAt: json['dueAt'] is String
+          ? (DateTime.tryParse(json['dueAt']) ?? DateTime.now())
+          : (json['dueAt']?.toDate() ?? DateTime.now()),
       category: json['category'] ?? '',
     );
   }
