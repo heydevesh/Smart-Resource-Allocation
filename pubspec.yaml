@@ -59,6 +59,8 @@ dependencies:
   flutter_styled_toast: ^2.2.1
   image_picker: ^1.0.7
   url_launcher: ^6.3.0
+  fl_chart: ^1.2.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

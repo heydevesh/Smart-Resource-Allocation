@@ -16,6 +16,15 @@ class AppTheme {
         error: dangerRed,
         surface: Colors.white,
       ),
+      scaffoldBackgroundColor: const Color(0xFFF9FAFB),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFF1F5F9)),
+        ),
+        color: Colors.white,
+      ),
       fontFamily: 'DM Sans',
       textTheme: const TextTheme(
         displayLarge: TextStyle(fontFamily: 'Syne', fontWeight: FontWeight.bold),
