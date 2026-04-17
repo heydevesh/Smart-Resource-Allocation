@@ -12,6 +12,11 @@
 .swiftpm/
 migrate_working_dir/
 
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
 # IntelliJ related
 *.iml
 *.ipr
