@@ -17,11 +17,7 @@ void main() async {
   // Initialize Firebase
   await FirebaseService().initialize();
 
-  runApp(
-    const ProviderScope(
-      child: SahaayApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: SahaayApp()));
 }
 
 class SahaayApp extends StatelessWidget {
@@ -41,32 +37,34 @@ class SahaayApp extends StatelessWidget {
 final GoRouter _appRouter = GoRouter(
   initialLocation: '/login',
   routes: [
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     ShellRoute(
       builder: (context, state, child) => MainShell(child: child),
       routes: [
         GoRoute(
           path: '/home',
-          pageBuilder: (context, state) => const NoTransitionPage(child: HomeScreen()),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: HomeScreen()),
         ),
         GoRoute(
           path: '/needs-map',
-          pageBuilder: (context, state) => const NoTransitionPage(child: NeedsMapScreen()),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: NeedsMapScreen()),
         ),
         GoRoute(
           path: '/tasks',
-          pageBuilder: (context, state) => const NoTransitionPage(child: TasksScreen()),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: TasksScreen()),
         ),
         GoRoute(
           path: '/volunteers',
-          pageBuilder: (context, state) => const NoTransitionPage(child: VolunteersScreen()),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: VolunteersScreen()),
         ),
         GoRoute(
           path: '/insights',
-          pageBuilder: (context, state) => const NoTransitionPage(child: InsightsScreen()),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: InsightsScreen()),
         ),
       ],
     ),
@@ -78,7 +76,12 @@ class _NavItem {
   final IconData icon;
   final IconData selIcon;
   final String label;
-  const _NavItem({required this.path, required this.icon, required this.selIcon, required this.label});
+  const _NavItem({
+    required this.path,
+    required this.icon,
+    required this.selIcon,
+    required this.label,
+  });
 }
 
 class MainShell extends ConsumerStatefulWidget {
@@ -91,39 +94,67 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
-  int _selectedIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     final userModelAsync = ref.watch(userRoleProvider);
     final isAdmin = userModelAsync.valueOrNull?.role == 'admin';
+    final location = GoRouterState.of(context).uri.path;
 
     final navItems = [
-      const _NavItem(path: '/home', icon: Icons.dashboard_outlined, selIcon: Icons.dashboard, label: 'Home'),
-      const _NavItem(path: '/needs-map', icon: Icons.map_outlined, selIcon: Icons.map, label: 'Map'),
-      const _NavItem(path: '/tasks', icon: Icons.task_alt, selIcon: Icons.task, label: 'Tasks'),
-      const _NavItem(path: '/volunteers', icon: Icons.people_outline, selIcon: Icons.people, label: 'Volunteers'),
+      const _NavItem(
+        path: '/home',
+        icon: Icons.dashboard_outlined,
+        selIcon: Icons.dashboard,
+        label: 'Home',
+      ),
+      const _NavItem(
+        path: '/needs-map',
+        icon: Icons.map_outlined,
+        selIcon: Icons.map,
+        label: 'Map',
+      ),
+      const _NavItem(
+        path: '/tasks',
+        icon: Icons.task_alt,
+        selIcon: Icons.task,
+        label: 'Tasks',
+      ),
+      const _NavItem(
+        path: '/volunteers',
+        icon: Icons.people_outline,
+        selIcon: Icons.people,
+        label: 'Volunteers',
+      ),
       if (isAdmin)
-        const _NavItem(path: '/insights', icon: Icons.analytics_outlined, selIcon: Icons.analytics, label: 'Admin'),
+        const _NavItem(
+          path: '/insights',
+          icon: Icons.analytics_outlined,
+          selIcon: Icons.analytics,
+          label: 'Admin',
+        ),
     ];
 
-    if (_selectedIndex >= navItems.length) {
-      _selectedIndex = 0;
-    }
+    final selectedIndex = navItems.indexWhere(
+      (item) => location.startsWith(item.path),
+    );
+    final safeSelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
 
     return Scaffold(
       body: widget.child,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
+        selectedIndex: safeSelectedIndex,
         onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
           context.go(navItems[index].path);
         },
-        destinations: navItems.map((item) => NavigationDestination(
-          icon: Icon(item.icon),
-          selectedIcon: Icon(item.selIcon),
-          label: item.label,
-        )).toList(),
+        destinations: navItems
+            .map(
+              (item) => NavigationDestination(
+                icon: Icon(item.icon),
+                selectedIcon: Icon(item.selIcon),
+                label: item.label,
+              ),
+            )
+            .toList(),
       ),
     );
   }
