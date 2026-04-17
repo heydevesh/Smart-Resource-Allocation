@@ -5,6 +5,7 @@ import '../models/need_model.dart';
 import '../models/task_model.dart';
 import '../models/volunteer_model.dart';
 import 'firebase_service.dart';
+import 'mock_data_service.dart';
 
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
@@ -14,14 +15,18 @@ class ApiService {
       final snapshot = await FirebaseFirestore.instance.collection('needs').get();
       return snapshot.docs.map((doc) => NeedModel.fromJson(doc.data(), doc.id)).toList();
     }
-    
-    // Fallback to local python backend in demo mode
-    final response = await http.get(Uri.parse('$baseUrl/needs'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body)['needs'] as Map<String, dynamic>;
-      return data.entries.map((e) => NeedModel.fromJson(e.value, e.key)).toList();
+    // Fallback to local python backend or mock data in demo mode
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/needs')).timeout(const Duration(seconds: 2));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body)['needs'] as Map<String, dynamic>;
+        return data.entries.map((e) => NeedModel.fromJson(e.value, e.key)).toList();
+      }
+    } catch (_) {
+      // Return high-quality mock data if backend is offline
+      return MockDataService.getRealisticNeeds();
     }
-    throw Exception('Failed to load needs');
+    return MockDataService.getRealisticNeeds();
   }
 
   Future<List<TaskModel>> getTasks() async {
@@ -30,12 +35,16 @@ class ApiService {
       return snapshot.docs.map((doc) => TaskModel.fromJson(doc.data(), doc.id)).toList();
     }
     
-    final response = await http.get(Uri.parse('$baseUrl/tasks'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body)['tasks'] as Map<String, dynamic>;
-      return data.entries.map((e) => TaskModel.fromJson(e.value, e.key)).toList();
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/tasks')).timeout(const Duration(seconds: 2));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body)['tasks'] as Map<String, dynamic>;
+        return data.entries.map((e) => TaskModel.fromJson(e.value, e.key)).toList();
+      }
+    } catch (_) {
+      return MockDataService.getRealisticTasks();
     }
-    throw Exception('Failed to load tasks');
+    return MockDataService.getRealisticTasks();
   }
 
   Future<List<VolunteerModel>> getVolunteers() async {
@@ -44,26 +53,33 @@ class ApiService {
       return snapshot.docs.map((doc) => VolunteerModel.fromJson(doc.data(), doc.id)).toList();
     }
 
-    final response = await http.get(Uri.parse('$baseUrl/volunteers'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body)['volunteers'] as Map<String, dynamic>;
-      return data.entries.map((e) => VolunteerModel.fromJson(e.value, e.key)).toList();
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/volunteers')).timeout(const Duration(seconds: 2));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body)['volunteers'] as Map<String, dynamic>;
+        return data.entries.map((e) => VolunteerModel.fromJson(e.value, e.key)).toList();
+      }
+    } catch (_) {
+      return MockDataService.getRealisticVolunteers();
     }
-    throw Exception('Failed to load volunteers');
+    return MockDataService.getRealisticVolunteers();
   }
 
-  // Gemini via python backend shouldn't talk directly to Gemini from client side to hide API Key
   Future<String> getSmartMatch(String taskId, String taskDetails) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/smart-match'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'task_id': taskId, 'task_details': taskDetails}),
-    );
-    
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['matched_data']['result'] ?? 'No match prediction.';
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/smart-match'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'task_id': taskId, 'task_details': taskDetails}),
+      ).timeout(const Duration(seconds: 2));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['matched_data']['result'] ?? 'No match prediction.';
+      }
+    } catch (_) {
+      return MockDataService.getMockAiMatch(taskId, taskDetails);
     }
-    throw Exception('Failed to get smart match');
+    return MockDataService.getMockAiMatch(taskId, taskDetails);
   }
 }
