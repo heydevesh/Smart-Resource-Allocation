@@ -1,0 +1,21 @@
+<h2>Add Need</h2>
+
+<form (ngSubmit)="submit()">
+
+  <input 
+    type="text" 
+    [(ngModel)]="type" 
+    name="type" 
+    placeholder="Need Type"
+    required
+  >
+
+  <select [(ngModel)]="urgency" name="urgency">
+    <option value="low">Low</option>
+    <option value="medium">Medium</option>
+    <option value="high">High</option>
+  </select>
+
+  <button type="submit">Submit</button>
+
+</form>

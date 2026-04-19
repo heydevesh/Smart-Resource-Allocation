@@ -1,0 +1,10 @@
+<h2>Dashboard</h2>
+
+<div *ngIf="needs.length === 0">
+  No needs available
+</div>
+
+<div *ngFor="let need of needs" class="card">
+  <p><strong>Type:</strong> {{need.type}}</p>
+  <p><strong>Urgency:</strong> {{need.urgency}}</p>
+</div>
