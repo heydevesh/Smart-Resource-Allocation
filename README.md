@@ -1,68 +1,27 @@
-# Sahaay 
----
+# Sahaay
 
-## 📌 Project Context
-**Challenge:** Google Solution Challenge 2026 (Topic 5: Smart Resource Allocation)
-**Target Region:** India (Pilot in Mumbai)
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
 
-India has over 3.3 million NGOs, but the vast majority still rely on paper surveys and fragmented communication (like WhatsApp groups) to track community needs and coordinate volunteers. This results in missing data, delayed response times for critical needs, and inadequate resource distribution.
+## Development server
 
-This project solves this by digitizing the entire needs-assessment and volunteer-matching workflow. It turns scattered field data into instant, actionable intelligence through real-time geolocation mapping and Gemini AI-powered volunteer matching, dramatically reducing response times from hours to minutes.
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
-## 🌟 Core Solution Pillars
+## Code scaffolding
 
-1. **Needs Digitization:** Field workers report needs directly via the app or Google Forms, which feed into a centralized Firebase Firestore database.
-2. **Intelligent Volunteer Matching:** Gemini AI analyzes task requirements, volunteer skills, proximity, workload, and availability to recommend the top responders.
-3. **Real-Time Coordination Dashboard:** A live map and dashboard provide coordinators with a complete operational picture, tracking unaddressed needs, active volunteers, and critical hotspots.
+Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
 
-## 🎯 Target Audience & Roles
+## Build
 
-* **NGO Admin (Coordinator):** Manages volunteers, creates/assigns tasks, views analytics, and oversees the entire operation.
-* **Field Worker:** Submits on-ground community needs with geotags and updates task progress.
-* **Volunteer:** Receives AI-assigned tasks based on match criteria, accepts tasks, and updates completion status.
-* **Super Admin:** Multi-region manager viewing high-level analytics and donor reporting.
+Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
-## 💻 Tech Stack
+## Running unit tests
 
-* **Frontend:** Flutter (Android, iOS, Web) with Material Design 3
-* **Backend & Database:** Firebase (Firestore, Auth, Cloud Messaging, Storage, Cloud Functions)
-* **AI & Machine Learning:** Gemini API (Smart Matching, Recommendations, Pattern Prediction)
-* **Geolocation & Mapping:** Google Maps Platform (Interactive maps, needs heatmap, distance matrix)
+Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
-## ✨ Key Features
+## Running end-to-end tests
 
-* **Interactive Needs Map & Heatmap:** See all community needs on a live map with color-coded urgency pins and density heatmaps.
-* **AI-Powered "Smart Match":** One-tap task assignment engine using the Gemini API to rank the best volunteers.
-* **Offline Support:** Field workers can submit needs without internet connectivity.
-* **Automated Escalation & Alerts:** Push notifications for critical unmet needs.
-* **Insight & Analytics:** Real-time dashboards visualizing task completion rates, needs by category, and area reports.
-* **Auto-generated Reports:** One-tap PDF export of impact summaries for donors and authorities.
+Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
 
-## 💾 Database Schema Overview (Firestore)
+## Further help
 
-* `/needs`: Details of reported community requirements (category, location, urgency, status).
-* `/tasks`: Work items assigned to volunteers linked to specific needs.
-* `/volunteers`: Registered community helpers with their skills, availability, and task history.
-* `/users`: Role-based user accounts and metadata.
-
-## 🚀 Prototype Build Plan (Current Status)
-
-1. **Environment Setup (Done ✅):** Flutter app scaffolded as `sahaay` in the repository.
-2. **Dependencies Setup (Done ✅):** Updated `pubspec.yaml` with necessary packages (Firebase, Maps, Gemini API).
-3. **API Integrations:** 
-   * Obtain a Gemini API Key and a Google Maps API Key.
-   * Connect to Firebase (Firestore, Auth, Storage).
-   * *(Note: Strict usage of free-tier features. No paid API billing enabled.)*
-4. **UI Shell Construction (Done ✅):** Built the bottom navigation and the 5 active tracking tabs, and responsive side navigation for Web.
-5. **Data Models (Done ✅):** Created core entities (Needs, Tasks, Volunteers).
-6. **Run the App:** Execute `flutter run` on an Android physical device to test offline persistence and location tracking.
-
-## 🌍 SDG Alignment
-
-* **SDG 1 (No Poverty):** Faster delivery of essential food and resources to communities.
-* **SDG 3 (Good Health and Well-being):** Rapid response to critical medical needs through optimized assignment.
-* **SDG 4 (Quality Education):** Fulfilling educational supply/tutor needs efficiently.
-* **SDG 17 (Partnerships for Goals):** Providing a unified collaborative platform for NGOs, volunteers, and local agencies.
-
-
-***dont to anything which wourl cost me a sinlge dollor just enable the api ***
+To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

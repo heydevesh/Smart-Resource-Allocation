@@ -1,0 +1,68 @@
+/* styles.scss */
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+:root {
+  --color-primary: #0a6b5e;
+  --color-primary-light: #e8f5f2;
+  --color-primary-mid: #1d9e75;
+  --color-warning: #d97706;
+  --color-warning-light: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-light: #fef2f2;
+  --color-success: #16a34a;
+  --color-success-light: #f0fdf4;
+  --color-info: #2563eb;
+  --color-info-light: #eff6ff;
+  --color-surface: #fafaf9;
+  --color-card: #ffffff;
+  --color-border: #e5e3df;
+  --color-text-primary: #111110;
+  --color-text-secondary: #6b6965;
+  --color-text-hint: #a8a5a0;
+
+  --font-display: "DM Serif Display", serif;
+  --font-ui: "Inter", sans-serif;
+
+  --radius-card: 14px;
+  --radius-button: 8px;
+  --radius-input: 9px;
+  --radius-badge: 20px;
+  --screen-pad: 12px;
+  --card-pad-v: 12px;
+  --card-pad-h: 14px;
+  --card-gap: 8px;
+}
+
+body {
+  font-family: var(--font-ui);
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  margin: 0;
+}
+
+.primary-color {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+/* Base utility classes for premium design */
+.card-shadow {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
