@@ -1,0 +1,20 @@
+.card {
+  background: linear-gradient(to bottom, red, black);
+  padding: 5px;
+  border-radius: 20px;
+  width: 220px;
+  text-align: center;
+  color: white;
+}
+
+.cardTitle {
+  font-size: 24px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 700;
+}
+
+.cardValue{
+  font-size: 40px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 900;
+}

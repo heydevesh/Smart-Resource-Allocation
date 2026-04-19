@@ -1,0 +1,43 @@
+.navbar {
+  text-align: center;
+  color: black;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-decoration: none;
+}
+
+.logo {
+  font-size: 40px;
+  font-weight: 900;
+}
+
+.nav-links {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 10px;
+  text-decoration: none;
+}
+
+.nav-links span {
+  cursor: pointer;
+  color: #aaa;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.nonActive{
+  text-decoration: none;
+  color: black;
+}
+
+.nav-links .active {
+  color: red;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+
+.nav-links span:hover {
+  color: #ff4d4d;
+}
