@@ -8,7 +8,7 @@ export interface Task {
   category: Need["category"];
   priority: Need["urgency"];
   volunteerIds: string[];
-  status: "pending" | "active" | "completed" | "escalated";
+  status: "pending" | "active" | "in_progress" | "completed" | "escalated";
   progress: number;
   dueAt: Timestamp;
   createdBy: string;

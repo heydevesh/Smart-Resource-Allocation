@@ -6,4 +6,5 @@ export interface User {
   displayName: string;
   role: UserRole;
   region?: string;
+  photoURL?: string;
 }
