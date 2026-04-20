@@ -133,4 +133,10 @@ export class FirestoreService {
       timestamp: new Date()
     });
   }
+
+  getVolunteerActivities(volunteerId: string): Observable<Activity[]> {
+    const activitiesRef = collection(this.firestore, 'activities');
+    const q = query(activitiesRef, where('userId', '==', volunteerId), orderBy('timestamp', 'desc'));
+    return collectionData(q, { idField: 'id' }) as Observable<Activity[]>;
+  }
 }
