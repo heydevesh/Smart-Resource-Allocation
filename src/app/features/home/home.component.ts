@@ -7,7 +7,7 @@ import { StatCardComponent } from '../../shared/components/stat-card/stat-card.c
 import { NeedCardComponent } from '../../shared/components/need-card/need-card.component';
 import { TaskCardComponent } from '../../shared/components/task-card/task-card.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { Need, Task, VolunteerMatch } from '../../models';
+import { Need, Task, VolunteerMatch, Activity } from '../../models';
 import { FirestoreService } from '../../core/firebase/firestore.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { AgentService } from '../../core/ai/agent.service';
@@ -27,337 +27,178 @@ import { toSignal } from '@angular/core/rxjs-interop';
     RouterLink
   ],
   template: `
-    <div class="page-container">
-      <!-- TOP BAR -->
-      <header class="top-bar">
-        <div class="logo-area">
-          <span class="logo-text">Sahaay</span>
-          <span class="logo-subtext">सहाय</span>
+    <div class="flex flex-col flex-1 h-full w-full overflow-hidden bg-surface">
+      <!-- Scrollable Content -->
+      <main class="flex-1 overflow-y-auto p-8 pb-24">
+        <!-- Greeting & Summary -->
+        <div class="mb-12 max-w-7xl mx-auto">
+          <h2 class="font-serif text-5xl font-normal tracking-tight text-on-surface mb-2">Good morning, {{ firstName() }}</h2>
+          <p class="text-on-surface-variant text-lg">
+            Mumbai Ward 4 Command Center is <span class="text-secondary font-medium">operational</span>. 
+            {{ criticalNeedsCount() }} critical incidents require attention.
+          </p>
         </div>
-        <div class="top-actions">
-          <div class="notification-wrap">
-            <mat-icon class="bell-icon">notifications_none</mat-icon>
-            <span class="badge" *ngIf="criticalNeedsCount() > 0">{{ criticalNeedsCount() }}</span>
+
+        <!-- Stat Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 max-w-7xl mx-auto">
+          <!-- Stat 1 -->
+          <div class="bg-surface-container-lowest p-6 rounded-[14px] flex flex-col justify-between h-32 relative overflow-hidden border border-outline-variant/15 shadow-sm">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+            <div class="flex justify-between items-start">
+              <span class="text-on-surface-variant font-medium text-xs tracking-wide uppercase">Open Needs</span>
+              <span class="material-symbols-outlined text-error">assignment_late</span>
+            </div>
+            <h3 class="font-serif text-4xl text-on-surface">{{ recentNeeds().length }}</h3>
           </div>
-          <div class="avatar">{{ userInitials() }}</div>
+          
+          <!-- Stat 2 -->
+          <div class="bg-surface-container-lowest p-6 rounded-[14px] flex flex-col justify-between h-32 border border-outline-variant/15 shadow-sm">
+            <div class="flex justify-between items-start">
+              <span class="text-on-surface-variant font-medium text-xs tracking-wide uppercase">Volunteers</span>
+              <span class="material-symbols-outlined text-primary">group</span>
+            </div>
+            <h3 class="font-serif text-4xl text-on-surface">{{ availableVolunteers().length }}</h3>
+          </div>
+          
+          <!-- Stat 3 -->
+          <div class="bg-surface-container-lowest p-6 rounded-[14px] flex flex-col justify-between h-32 border border-outline-variant/15 shadow-sm">
+            <div class="flex justify-between items-start">
+              <span class="text-on-surface-variant font-medium text-xs tracking-wide uppercase">In Progress</span>
+              <span class="material-symbols-outlined text-warning">sync</span>
+            </div>
+            <h3 class="font-serif text-4xl text-on-surface">{{ activeTasks().length }}</h3>
+          </div>
+          
+          <!-- Stat 4 -->
+          <div class="bg-surface-container-lowest p-6 rounded-[14px] flex flex-col justify-between h-32 border border-outline-variant/15 shadow-sm">
+            <div class="flex justify-between items-start">
+              <span class="text-on-surface-variant font-medium text-xs tracking-wide uppercase">Resolved (Today)</span>
+              <span class="material-symbols-outlined text-success">check_circle</span>
+            </div>
+            <h3 class="font-serif text-4xl text-on-surface">{{ resolvedTodayCount() }}</h3>
+          </div>
         </div>
-      </header>
 
-      <!-- GREETING SECTION -->
-      <section class="greeting-section">
-        <h1 class="greeting-title">Good morning, {{ firstName() }}</h1>
-        <div class="alert-text" *ngIf="criticalNeedsCount() > 0">
-          <span class="pulsing-dot"></span>
-          <p>{{ criticalNeedsCount() }} critical needs in {{ user()?.region || 'your area' }} need immediate attention</p>
-        </div>
-      </section>
-
-      <!-- STAT CARDS (Horizontal Scroll) -->
-      <section class="stats-scroll-container">
-        <div class="stats-scroll-track">
-          <app-stat-card title="Open Needs" [value]="recentNeeds().length.toString() || '0'" icon="place" colorClass="color-primary"></app-stat-card>
-          <app-stat-card title="Volunteers Active" [value]="availableVolunteers().length.toString() || '0'" icon="person" colorClass="color-info"></app-stat-card>
-          <app-stat-card title="In Progress" [value]="activeTasks().length.toString() || '0'" icon="checklist" colorClass="color-warning"></app-stat-card>
-          <app-stat-card title="Resolved Today" [value]="resolvedTodayCount().toString() || '0'" icon="check_circle" colorClass="color-success"></app-stat-card>
-        </div>
-      </section>
-      
-      <!-- AI MATCH CARD -->
-      <section class="ai-match-section" *ngIf="latestMatch()">
-        <div class="ai-match-card">
-          <div class="ai-card-header">
-            <div class="ai-badge">
-              <mat-icon class="sparkle-icon">auto_awesome</mat-icon>
-              <span>AI Match Ready</span>
+        <!-- Two Column Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          <!-- Left Column (Needs) -->
+          <div class="lg:col-span-2 flex flex-col gap-6">
+            <div class="flex justify-between items-baseline mb-2">
+              <h3 class="font-serif text-2xl text-on-surface">Needs Requiring Action</h3>
+              <a routerLink="/needs-map" class="text-primary font-medium text-sm hover:underline">View All</a>
+            </div>
+            
+            <!-- List Container -->
+            <div class="bg-surface-container-low rounded-2xl p-4 flex flex-col gap-4">
+              <ng-container *ngIf="recentNeeds() && recentNeeds().length > 0; else noNeeds">
+                <div *ngFor="let need of recentNeeds() | slice:0:3" 
+                     class="bg-surface-container-lowest rounded-[14px] p-5 relative flex items-center gap-5 shadow-sm border border-outline-variant/10 hover:border-primary/20 transition-all cursor-pointer"
+                     (click)="onNeedClick(need)">
+                  <div class="absolute left-0 top-4 bottom-4 w-1 rounded-r-sm" [ngClass]="getUrgencyColor(need.urgency)"></div>
+                  <div class="p-3 rounded-xl shrink-0" [ngClass]="getCategoryBg(need.urgency)">
+                    <span class="material-symbols-outlined">{{ getCategoryIcon(need.category) }}</span>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                      <h4 class="font-semibold text-on-surface text-lg">{{ need.title }}</h4>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide" [ngClass]="getUrgencyBadgeClass(need.urgency)">
+                        {{ need.urgency }}
+                      </span>
+                    </div>
+                    <p class="text-on-surface-variant text-sm flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[16px]">location_on</span>
+                      {{ need.locationName }} • Reported {{ need.reportedAt.toDate() | date:'shortTime' }}
+                    </p>
+                  </div>
+                  <div class="shrink-0 ml-4">
+                    <button mat-flat-button color="primary" class="rounded-lg text-sm" (click)="onAssignClick($event, need)">
+                      Assign
+                    </button>
+                  </div>
+                </div>
+              </ng-container>
+              
+              <ng-template #noNeeds>
+                <div class="p-12 text-center">
+                  <span class="material-symbols-outlined text-5xl text-outline mb-4">task_alt</span>
+                  <h4 class="text-on-surface font-medium">All caught up</h4>
+                  <p class="text-on-surface-variant text-sm">No critical needs require immediate attention.</p>
+                </div>
+              </ng-template>
             </div>
           </div>
-          <p class="ai-main-text"><strong>MatchAgent</strong> matched a volunteer to a critical task.</p>
-          <p class="ai-sub-text">Reason: {{ latestMatch()?.reason }}</p>
-          <div class="confidence-bar-wrap">
-            <div class="confidence-info">
-              <span>Confidence Score</span>
-              <span class="confidence-value">{{ (latestMatch()?.confidenceScore || 0) * 100 | number:'1.0-0' }}%</span>
-            </div>
-            <div class="progress-bg">
-              <div class="progress-fill" [style.width.%]="(latestMatch()?.confidenceScore || 0) * 100"></div>
-            </div>
-          </div>
-          <div class="ai-actions">
-            <button mat-button class="btn-secondary" (click)="dismissMatch()">Dismiss</button>
-            <button mat-flat-button class="btn-primary" (click)="reviewMatch()">Review Match</button>
-          </div>
-        </div>
-      </section>
 
-      <!-- CRITICAL NEEDS SECTION -->
-      <section class="needs-section">
-        <div class="section-header">
-          <h2 class="section-title">Needs Requiring Action</h2>
-          <a routerLink="/needs-map" class="view-all">View all &rarr;</a>
+          <!-- Right Column (AI & Activity) -->
+          <div class="lg:col-span-1 flex flex-col gap-8">
+            <!-- AI Match Ready Card -->
+            <div *ngIf="latestMatch()">
+              <h3 class="font-serif text-2xl text-on-surface mb-4">Intelligence</h3>
+              <div class="bg-primary-light/30 border border-primary/10 rounded-[14px] p-6 backdrop-blur-md relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-info/10 rounded-full blur-3xl"></div>
+                
+                <div class="flex items-start gap-3 mb-4 relative z-10">
+                  <span class="material-symbols-outlined text-primary mt-1" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                  <div>
+                    <h4 class="font-serif text-xl text-on-surface">AI Match Ready</h4>
+                    <p class="text-on-surface-variant text-sm mt-1 leading-relaxed">{{ latestMatch()?.reason }}</p>
+                  </div>
+                </div>
+                
+                <div class="confidence-bar-wrap mb-4 relative z-10">
+                  <div class="flex justify-between text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                    <span>Confidence</span>
+                    <span class="text-primary">{{ (latestMatch()?.confidenceScore || 0) * 100 | number:'1.0-0' }}%</span>
+                  </div>
+                  <div class="h-1.5 bg-outline-variant/20 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full" [style.width.%]="(latestMatch()?.confidenceScore || 0) * 100"></div>
+                  </div>
+                </div>
+
+                <button class="w-full bg-primary text-white font-medium py-2.5 rounded-lg text-sm hover:bg-primary-mid transition-colors relative z-10" (click)="reviewMatch()">
+                  Review Matches
+                </button>
+              </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div>
+              <h3 class="font-serif text-2xl text-on-surface mb-4">Recent Activity</h3>
+              <div class="bg-surface-container-lowest rounded-[14px] p-6 border border-outline-variant/15 flex flex-col gap-6 shadow-sm">
+                <div class="flex gap-4" *ngFor="let activity of recentActivities()">
+                  <div class="flex flex-col items-center">
+                    <div class="w-2 h-2 rounded-full mt-1.5" [ngClass]="activity.dotClass"></div>
+                    <div class="w-px h-full bg-outline-variant/30 my-1"></div>
+                  </div>
+                  <div class="pb-2">
+                    <p class="text-sm text-on-surface" [innerHTML]="activity.text"></p>
+                    <p class="text-xs text-outline mt-1">{{ activity.timestamp?.toDate() | date:'shortTime' }}</p>
+                  </div>
+                </div>
+                <div *ngIf="recentActivities().length === 0" class="text-center py-8 text-outline text-sm">
+                  No recent activities recorded.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <div class="needs-list">
-          <ng-container *ngIf="recentNeeds() && recentNeeds().length > 0; else noNeeds">
-            <app-need-card 
-              *ngFor="let need of recentNeeds() | slice:0:3" 
-              [need]="need"
-              (cardClick)="onNeedClick($event)">
-            </app-need-card>
-          </ng-container>
-          <ng-template #noNeeds>
-            <app-empty-state 
-              icon="check_circle_outline" 
-              title="All caught up" 
-              message="No critical needs reported right now.">
-            </app-empty-state>
-          </ng-template>
-        </div>
-      </section>
+      </main>
     </div>
   `,
   styles: [`
-    .page-container {
-      padding: var(--screen-pad);
-      padding-bottom: 80px; /* Space for bottom nav */
-      background-color: var(--color-surface);
-      min-height: 100vh;
-      box-sizing: border-box;
-    }
-
-    /* TOP BAR */
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-    .logo-area {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-    }
-    .logo-text {
-      font-family: var(--font-display);
-      font-size: 22px;
-      color: var(--color-primary);
-    }
-    .logo-subtext {
-      font-family: var(--font-ui);
-      font-size: 14px;
-      color: var(--color-text-hint);
-    }
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .notification-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .bell-icon {
-      color: var(--color-text-secondary);
-    }
-    .badge {
-      position: absolute;
-      top: -2px;
-      right: -4px;
-      background-color: var(--color-danger);
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      width: 16px;
-      height: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      border: 2px solid var(--color-surface);
-    }
-    .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background-color: var(--color-primary-light);
-      color: var(--color-primary);
-      font-weight: 600;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* GREETING SECTION */
-    .greeting-section {
-      margin-bottom: 24px;
-    }
-    .greeting-title {
-      margin: 0 0 8px 0;
-      font-family: var(--font-display);
-      font-size: 24px;
-      color: var(--color-text-primary);
-    }
-    .alert-text {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .alert-text p {
-      margin: 0;
-      font-family: var(--font-ui);
-      font-size: 13px;
-      color: var(--color-danger);
-      font-weight: 500;
-    }
-    .pulsing-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: var(--color-danger);
-      box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-    }
-
-    /* STAT CARDS (Horizontal Scroll) */
-    .stats-scroll-container {
-      margin: 0 calc(-1 * var(--screen-pad)) 24px;
-      padding: 0 var(--screen-pad);
-      overflow-x: auto;
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none;  /* IE and Edge */
-    }
-    .stats-scroll-container::-webkit-scrollbar {
-      display: none;
-    }
-    .stats-scroll-track {
-      display: inline-flex;
-      gap: 12px;
-      padding-bottom: 4px; /* for box-shadow */
-    }
-
-    /* AI MATCH CARD */
-    .ai-match-section {
-      margin-bottom: 24px;
-    }
-    .ai-match-card {
-      background: linear-gradient(145deg, #ffffff, #fdfbf7);
-      border-radius: var(--radius-card);
-      padding: 16px;
-      border: 1px solid var(--color-border);
-      box-shadow: 0 2px 12px rgba(10, 107, 94, 0.08);
-      position: relative;
-      overflow: hidden;
-    }
-    .ai-card-header {
-      margin-bottom: 12px;
-    }
-    .ai-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: linear-gradient(90deg, #f0fdf4, #e0f2fe);
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--color-primary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .sparkle-icon {
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
-      color: #0284c7;
-    }
-    .ai-main-text {
-      font-size: 14px;
-      line-height: 1.4;
-      color: var(--color-text-primary);
-      margin: 0 0 4px 0;
-    }
-    .ai-sub-text {
-      font-size: 12px;
-      color: var(--color-text-secondary);
-      margin: 0 0 16px 0;
-    }
-    .confidence-bar-wrap {
-      margin-bottom: 16px;
-    }
-    .confidence-info {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-bottom: 4px;
-      color: var(--color-text-secondary);
-      font-weight: 500;
-    }
-    .confidence-value {
-      color: var(--color-success);
-      font-weight: 700;
-    }
-    .progress-bg {
-      height: 6px;
-      background-color: var(--color-border);
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .progress-fill {
+    :host {
+      display: block;
       height: 100%;
-      background: linear-gradient(90deg, var(--color-primary), var(--color-success));
-      border-radius: 4px;
     }
-    .ai-actions {
-      display: flex;
-      gap: 12px;
-    }
-    .btn-secondary {
-      flex: 1;
-      border-radius: var(--radius-button);
-      color: var(--color-text-secondary);
-      border: 1px solid var(--color-border);
-    }
-    .btn-primary {
-      flex: 1;
-      border-radius: var(--radius-button);
-      background-color: var(--color-primary);
-      color: white;
-    }
-
-    /* CRITICAL NEEDS SECTION */
-    .needs-section {
-      margin-bottom: 24px;
-    }
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    .section-title {
-      margin: 0;
-      font-family: var(--font-ui);
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--color-text-primary);
-    }
-    .view-all {
-      font-size: 13px;
-      color: var(--color-primary);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .needs-list {
-      display: flex;
-      flex-direction: column;
-    }
+    .text-secondary { color: var(--color-primary-mid); }
+    .bg-warning { background-color: var(--color-warning); }
+    .text-warning { color: var(--color-warning); }
+    .bg-error { background-color: var(--color-danger); }
+    .text-error { color: var(--color-danger); }
+    .bg-success { background-color: var(--color-success); }
+    .text-success { color: var(--color-success); }
+    .text-info { color: var(--color-info); }
+    .bg-info { background-color: var(--color-info); }
   `]
 })
 export class HomeComponent implements OnInit {
@@ -371,6 +212,7 @@ export class HomeComponent implements OnInit {
   availableVolunteers = toSignal(this.firestore.getAvailableVolunteers(), { initialValue: [] });
   activeTasks = toSignal(this.firestore.getActiveTasks(), { initialValue: [] });
   allTasks = toSignal(this.firestore.getAllTasks(), { initialValue: [] });
+  recentActivities = toSignal(this.firestore.getRecentActivities(5), { initialValue: [] });
 
   criticalNeedsCount = computed(() => this.recentNeeds().filter(n => n.urgency === 'critical').length);
   resolvedTodayCount = computed(() => {
@@ -382,11 +224,10 @@ export class HomeComponent implements OnInit {
   latestMatch = signal<VolunteerMatch | null>(null);
 
   ngOnInit() {
-    // Generate a mock match for demonstration purposes until full backend pipeline is wired
     setTimeout(() => {
       this.latestMatch.set({
         volunteerId: 'vol-123',
-        reason: 'Priya Sharma has medical training and is 0.5km away.',
+        reason: 'System found 3 volunteer medics within 1km of the Sion Hospital Outpost restock request.',
         confidenceScore: 0.92,
         estimatedArrival: '10 mins',
         skillMatchTags: ['Medical', 'Emergency']
@@ -394,33 +235,55 @@ export class HomeComponent implements OnInit {
     }, 1500);
   }
 
-  userInitials(): string {
-    const name = this.user()?.displayName || 'RK';
-    if (name === 'RK') return name;
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  }
-
   firstName(): string {
     return this.user()?.displayName?.split(' ')[0] || 'Rahul';
   }
 
-  dismissMatch() {
-    this.latestMatch.set(null);
+  getUrgencyColor(urgency: string): string {
+    switch (urgency) {
+      case 'critical': return 'bg-error';
+      case 'high': return 'bg-warning';
+      case 'medium': return 'bg-info';
+      default: return 'bg-outline';
+    }
+  }
+
+  getUrgencyBadgeClass(urgency: string): string {
+    switch (urgency) {
+      case 'critical': return 'bg-error-container text-on-error-container';
+      case 'high': return 'bg-warning-light text-warning';
+      case 'medium': return 'bg-info-light text-info';
+      default: return 'bg-surface-container text-outline';
+    }
+  }
+
+  getCategoryBg(urgency: string): string {
+    return urgency === 'critical' ? 'bg-error-container text-on-error-container' : 'bg-surface-container text-on-surface-variant';
+  }
+
+  getCategoryIcon(category: string): string {
+    switch (category) {
+      case 'food': return 'restaurant';
+      case 'medical': return 'medical_services';
+      case 'water': return 'water_drop';
+      case 'shelter': return 'home';
+      case 'education': return 'school';
+      default: return 'help_outline';
+    }
   }
 
   reviewMatch() {
-    console.log('Reviewing match:', this.latestMatch());
-    // In a real implementation, this would open a dialog or navigate to the task detail
     this.router.navigate(['/tasks']);
   }
 
   onNeedClick(need: Need) {
     console.log('Need clicked', need);
-    // Could open a bottom sheet or modal
   }
 
-  onTaskClick(task: Task) {
-    console.log('Task clicked', task);
+  onAssignClick(event: Event, need: Need) {
+    event.stopPropagation();
+    console.log('Assign clicked for', need);
+    this.router.navigate(['/tasks']);
   }
 }
 
