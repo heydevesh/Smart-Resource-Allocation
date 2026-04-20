@@ -141,8 +141,10 @@ sahaay/
 ### 3.1 Enable APIs & IAM
 
 ```bash
-gcloud config set project sahaay-prod
+# Set to Frontend Project
+gcloud config set project sahaay-493113
 
+# Enable APIs in Frontend Project
 gcloud services enable \
   aiplatform.googleapis.com \
   cloudfunctions.googleapis.com \
@@ -150,9 +152,9 @@ gcloud services enable \
   run.googleapis.com \
   firestore.googleapis.com
 
-# Grant Cloud Functions SA access to Vertex AI
-gcloud projects add-iam-policy-binding sahaay-prod \
-  --member='serviceAccount:sahaay-prod@appspot.gserviceaccount.com' \
+# Grant Frontend SA access to Vertex AI in Project sahaay-18eb3
+gcloud projects add-iam-policy-binding sahaay-18eb3 \
+  --member='serviceAccount:sahaay-493113@appspot.gserviceaccount.com' \
   --role='roles/aiplatform.user'
 ```
 
@@ -168,11 +170,11 @@ Create 5 agents. Save each resource ID into `functions/go/config/agents.go`.
 | NarratorAgent     | gemini-2.0-flash | Donor report narration           |
 | QueryAgent        | gemini-2.0-flash | Natural language coordinator Q&A |
 
-Or via REST:
+Or via REST (Note: use sahaay-18eb3 for Vertex AI calls):
 
 ```bash
 curl -X POST \
-  "https://asia-south1-aiplatform.googleapis.com/v1beta1/projects/sahaay-prod/locations/asia-south1/agents" \
+  "https://asia-south1-aiplatform.googleapis.com/v1beta1/projects/sahaay-18eb3/locations/asia-south1/agents" \
   -H "Authorization: Bearer $(gcloud auth print-access-token)" \
   -H "Content-Type: application/json" \
   -d '{
@@ -205,15 +207,15 @@ go mod tidy
 ```go
 package config
 
-const Project  = "sahaay-prod"
+const Project  = "sahaay-18eb3"
 const Location = "asia-south1"
 
-// Paste resource IDs from Vertex AI console
-const OrchestratorAgentID = "projects/sahaay-prod/locations/asia-south1/agents/REPLACE"
-const MatchAgentID        = "projects/sahaay-prod/locations/asia-south1/agents/REPLACE"
-const SurgeAgentID        = "projects/sahaay-prod/locations/asia-south1/agents/REPLACE"
-const NarratorAgentID     = "projects/sahaay-prod/locations/asia-south1/agents/REPLACE"
-const QueryAgentID        = "projects/sahaay-prod/locations/asia-south1/agents/REPLACE"
+// Paste resource IDs from Vertex AI console (Project: sahaay-18eb3)
+const OrchestratorAgentID = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
+const MatchAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
+const SurgeAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
+const NarratorAgentID     = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
+const QueryAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
 ```
 
 ### `functions/go/middleware/auth.go`
@@ -354,8 +356,8 @@ gcloud functions deploy CallAgent \
   --entry-point=CallAgent \
   --trigger-http \
   --no-allow-unauthenticated \
-  --service-account=sahaay-prod@appspot.gserviceaccount.com \
-  --set-env-vars=GOOGLE_CLOUD_PROJECT=sahaay-prod
+  --service-account=sahaay-493113@appspot.gserviceaccount.com \
+  --set-env-vars=GOOGLE_CLOUD_PROJECT=sahaay-493113
 ```
 
 ---
