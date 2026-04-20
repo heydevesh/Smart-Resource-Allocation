@@ -8,11 +8,16 @@ import { VolunteerCardComponent } from '../../shared/components/volunteer-card/v
 import { Volunteer, VolunteerMatch, Task } from '../../models';
 import { AgentService } from '../../core/ai/agent.service';
 import { FirestoreService } from '../../core/firebase/firestore.service';
+import { SearchService } from '../../core/ui/search.service';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { AddVolunteerComponent } from '../../modals/add-volunteer/add-volunteer.component';
+import { VolunteerProfileComponent } from '../../modals/volunteer-profile/volunteer-profile.component';
+import { computed } from '@angular/core';
 
 @Component({
   selector: 'app-volunteers',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatChipsModule, VolunteerCardComponent],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatChipsModule, VolunteerCardComponent, MatDialogModule],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -20,7 +25,7 @@ import { FirestoreService } from '../../core/firebase/firestore.service';
           <h1 class="page-title">Volunteers</h1>
           <p class="page-subtitle">Coordinate your field force.</p>
         </div>
-        <button mat-fab class="add-button" color="primary">
+        <button mat-fab class="add-button" color="primary" (click)="openAddVolunteer()">
           <mat-icon>person_add</mat-icon>
         </button>
       </header>
@@ -39,12 +44,13 @@ import { FirestoreService } from '../../core/firebase/firestore.service';
       <div class="volunteer-list">
         <h3 class="section-title">Directory</h3>
         <app-volunteer-card 
-          *ngFor="let vol of volunteers()" 
+          *ngFor="let vol of filteredVolunteers()" 
           [volunteer]="vol"
-          [match]="getMatchFor(vol.id)">
+          [match]="getMatchFor(vol.id)"
+          (cardClick)="handleVolunteerClick($event)">
         </app-volunteer-card>
         
-        <div class="empty-state" *ngIf="volunteers().length === 0">
+        <div class="empty-state" *ngIf="filteredVolunteers().length === 0">
           <mat-icon>group_off</mat-icon>
           <p>No volunteers found in the directory.</p>
         </div>
@@ -135,12 +141,39 @@ import { FirestoreService } from '../../core/firebase/firestore.service';
 export class VolunteersComponent implements OnInit {
   private agentService = inject(AgentService);
   private firestoreService = inject(FirestoreService);
+  private searchService = inject(SearchService);
+  private dialog = inject(MatDialog);
   
   volunteers = toSignal(this.firestoreService.getAllVolunteers(), { initialValue: [] });
+  searchTerm = this.searchService.searchTerm;
   matches = signal<VolunteerMatch[]>([]);
   showMatcher = signal<boolean>(true);
 
+  filteredVolunteers = computed(() => {
+    const all = this.volunteers();
+    const search = this.searchTerm().toLowerCase();
+    if (!search) return all;
+    return all.filter(v => 
+      v.name.toLowerCase().includes(search) || 
+      v.skills.some(s => s.toLowerCase().includes(search))
+    );
+  });
+
   ngOnInit() {
+  }
+
+  openAddVolunteer() {
+    this.dialog.open(AddVolunteerComponent, {
+      width: '500px',
+      disableClose: true
+    });
+  }
+
+  handleVolunteerClick(volunteer: Volunteer) {
+    this.dialog.open(VolunteerProfileComponent, {
+      width: '500px',
+      data: { volunteer }
+    });
   }
 
   getMatchFor(volunteerId: string): VolunteerMatch | undefined {
