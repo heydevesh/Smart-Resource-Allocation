@@ -54,6 +54,18 @@ export class FirestoreService {
     return collectionData(q, { idField: 'id' }) as Observable<Task[]>;
   }
 
+  async addTask(task: Partial<Task>): Promise<void> {
+    const newDocRef = doc(collection(this.firestore, 'tasks'));
+    const taskWithId = { 
+      ...task, 
+      id: newDocRef.id,
+      createdAt: new Date(),
+      status: task.status || 'pending',
+      progress: task.progress || 0
+    };
+    await setDoc(newDocRef, taskWithId);
+  }
+
   async updateTask(id: string, data: Partial<Task>): Promise<void> {
     const taskDoc = doc(this.firestore, `tasks/${id}`);
     await updateDoc(taskDoc, data);
@@ -69,6 +81,16 @@ export class FirestoreService {
   getAllVolunteers(): Observable<Volunteer[]> {
     const volunteersRef = collection(this.firestore, 'volunteers');
     return collectionData(volunteersRef, { idField: 'id' }) as Observable<Volunteer[]>;
+  }
+
+  getVolunteerById(id: string): Observable<Volunteer | undefined> {
+    const volunteerDoc = doc(this.firestore, `volunteers/${id}`);
+    return docData(volunteerDoc, { idField: 'id' }) as Observable<Volunteer | undefined>;
+  }
+
+  async updateVolunteer(id: string, data: Partial<Volunteer>): Promise<void> {
+    const volunteerDoc = doc(this.firestore, `volunteers/${id}`);
+    await updateDoc(volunteerDoc, data);
   }
 
   async semanticSearch(queryStr: string): Promise<Need[]> {
