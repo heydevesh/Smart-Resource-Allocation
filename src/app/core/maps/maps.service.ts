@@ -118,4 +118,13 @@ export class MapsService {
       }
     ];
   }
+
+  createHeatmap(map: google.maps.Map, data: google.maps.LatLngLiteral[]): google.maps.visualization.HeatmapLayer {
+    return new google.maps.visualization.HeatmapLayer({
+      data: data.map(point => new google.maps.LatLng(point.lat, point.lng)),
+      map: map,
+      radius: 30,
+      opacity: 0.7
+    });
+  }
 }
