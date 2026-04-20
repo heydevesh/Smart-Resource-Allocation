@@ -1,0 +1,101 @@
+<div class="modal-container glass-panel">
+  <div class="modal-header">
+    <div class="title-group">
+      <div class="badge">
+        <mat-icon>add_alert</mat-icon>
+        <span>REPORT CRISIS</span>
+      </div>
+      <h2 class="font-headline">Field Intelligence</h2>
+    </div>
+    <button mat-icon-button (click)="dialogRef.close()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="reportForm" (ngSubmit)="onSubmit()" class="modal-body">
+    <div class="section">
+      <label>Nature of Crisis</label>
+      <mat-button-toggle-group formControlName="category" aria-label="Category">
+        <mat-button-toggle value="medical">
+          <mat-icon>medical_services</mat-icon>
+          <span>Medical</span>
+        </mat-button-toggle>
+        <mat-button-toggle value="food">
+          <mat-icon>restaurant</mat-icon>
+          <span>Food</span>
+        </mat-button-toggle>
+        <mat-button-toggle value="water">
+          <mat-icon>water_drop</mat-icon>
+          <span>Water</span>
+        </mat-button-toggle>
+        <mat-button-toggle value="shelter">
+          <mat-icon>home</mat-icon>
+          <span>Shelter</span>
+        </mat-button-toggle>
+        <mat-button-toggle value="other">
+          <mat-icon>more_horiz</mat-icon>
+          <span>Other</span>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <div class="section">
+      <label>Urgency Level</label>
+      <mat-button-toggle-group formControlName="urgency" class="urgency-toggle">
+        <mat-button-toggle value="low" class="low">Low</mat-button-toggle>
+        <mat-button-toggle value="medium" class="medium">Medium</mat-button-toggle>
+        <mat-button-toggle value="high" class="high">High</mat-button-toggle>
+        <mat-button-toggle value="critical" class="critical">Critical</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Subject</mat-label>
+        <input matInput formControlName="title" placeholder="e.g., Severe flooding in Sector 4">
+        <mat-icon matPrefix>edit_note</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Intelligence Details</mat-label>
+        <textarea matInput formControlName="description" rows="3" placeholder="Provide specific details about the situation..."></textarea>
+      </mat-form-field>
+
+      <div class="location-box" [class.detecting]="isDetectingLocation">
+        <mat-icon>location_on</mat-icon>
+        <div class="loc-info">
+          <span class="label">Auto-detected Location</span>
+          <span class="value">{{ reportForm.get('locationName')?.value }}</span>
+        </div>
+        <button type="button" mat-icon-button (click)="detectLocation()" [disabled]="isDetectingLocation">
+          <mat-icon [class.spin]="isDetectingLocation">refresh</mat-icon>
+        </button>
+      </div>
+
+      <div class="photo-upload-section">
+        <label>Visual Evidence</label>
+        <div class="upload-container" (click)="photoInput.click()">
+          <input #photoInput type="file" (change)="onFileSelected($event)" accept="image/*" hidden>
+          <div *ngIf="!photoPreview" class="placeholder">
+            <mat-icon>add_a_photo</mat-icon>
+            <span>Attach Evidence Photo</span>
+          </div>
+          <img *ngIf="photoPreview" [src]="photoPreview" class="preview">
+          <div *ngIf="photoPreview" class="change-overlay">
+            <mat-icon>cached</mat-icon>
+            <span>Change Photo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" mat-button (click)="dialogRef.close()" [disabled]="isUploading">Cancel</button>
+      <button type="submit" mat-flat-button color="primary" [disabled]="reportForm.invalid || isDetectingLocation || isUploading">
+        <mat-icon *ngIf="!isUploading">send</mat-icon>
+        <mat-icon *ngIf="isUploading" class="spin">sync</mat-icon>
+        <span>{{ isUploading ? 'UPLOADING...' : 'DISPATCH REPORT' }}</span>
+      </button>
+    </div>
+  </form>
+</div>
