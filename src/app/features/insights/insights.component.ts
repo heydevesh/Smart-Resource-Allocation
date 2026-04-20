@@ -76,6 +76,38 @@ import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader
           </div>
         </div>
       </section>
+
+      <!-- Impact Chart Section -->
+      <section class="insight-section mt-4">
+        <div class="section-header">
+          <h2>Operational Impact</h2>
+        </div>
+        
+        <div class="ai-card">
+          <div class="chart-container">
+            <div class="chart-y-axis">
+              <span>200</span>
+              <span>150</span>
+              <span>100</span>
+              <span>50</span>
+              <span>0</span>
+            </div>
+            <div class="chart-content">
+              <div class="bar-group" *ngFor="let month of monthlyData">
+                <div class="bar-wrapper">
+                  <div class="bar missions" [style.height.%]="(month.missions / 200) * 100" [title]="'Missions: ' + month.missions"></div>
+                  <div class="bar impact" [style.height.%]="(month.impact / 200) * 100" [title]="'Impact Score: ' + month.impact"></div>
+                </div>
+                <span class="month-label">{{ month.name }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><span class="dot missions"></span> Missions Resolved</div>
+            <div class="legend-item"><span class="dot impact"></span> Impact Score</div>
+          </div>
+        </div>
+      </section>
     </div>
   `,
   styles: [`
@@ -183,6 +215,71 @@ import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader
       display: flex;
       gap: 12px;
     }
+
+    .chart-container {
+      display: flex;
+      height: 200px;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .chart-y-axis {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: var(--color-text-hint);
+      font-size: 10px;
+      padding-bottom: 24px;
+    }
+    .chart-content {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 4px;
+    }
+    .bar-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+    .bar-wrapper {
+      height: 160px;
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 4px;
+    }
+    .bar {
+      width: 12px;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.6s ease-out;
+    }
+    .bar.missions { background: var(--color-primary); }
+    .bar.impact { background: var(--color-info); opacity: 0.6; }
+    .month-label {
+      margin-top: 8px;
+      font-size: 10px;
+      color: var(--color-text-secondary);
+      font-weight: 600;
+    }
+    .chart-legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--color-text-secondary);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.missions { background: var(--color-primary); }
+    .dot.impact { background: var(--color-info); opacity: 0.6; }
   `]
 })
 export class InsightsComponent {
@@ -190,6 +287,15 @@ export class InsightsComponent {
   
   predictions = signal<SurgePrediction[]>([]);
   loadingPredictions = signal<boolean>(false);
+
+  monthlyData = [
+    { name: 'Jan', missions: 120, impact: 85 },
+    { name: 'Feb', missions: 145, impact: 98 },
+    { name: 'Mar', missions: 130, impact: 92 },
+    { name: 'Apr', missions: 165, impact: 115 },
+    { name: 'May', missions: 190, impact: 140 },
+    { name: 'Jun', missions: 155, impact: 110 }
+  ];
 
   async loadPredictions() {
     this.loadingPredictions.set(true);
