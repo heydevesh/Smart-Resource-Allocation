@@ -25,6 +25,10 @@ import { RelativeTimePipe } from '../../pipes/relative-time.pipe';
         <span class="status-badge" [ngClass]="data.need.status">{{ data.need.status }}</span>
       </div>
 
+      <div class="photo-preview" *ngIf="data.need.photoUrl">
+        <img [src]="data.need.photoUrl" alt="Crisis evidence">
+      </div>
+
       <div class="section">
         <p class="description" *ngIf="data.need.summary"><strong>Summary:</strong> {{ data.need.summary }}</p>
         <p class="description"><strong>Details:</strong> {{ data.need.description }}</p>
@@ -47,7 +51,7 @@ import { RelativeTimePipe } from '../../pipes/relative-time.pipe';
       </div>
 
       <div class="actions">
-        <button mat-stroked-button color="primary" class="action-btn">
+        <button mat-stroked-button color="primary" class="action-btn" (click)="openDirections()">
           <mat-icon>directions</mat-icon> Get Route
         </button>
         <button mat-flat-button color="primary" class="action-btn" *ngIf="data.need.status === 'open'">
@@ -91,6 +95,20 @@ import { RelativeTimePipe } from '../../pipes/relative-time.pipe';
     .urgency-badge.low { background: var(--color-success-light); color: var(--color-success); }
     .status-badge.open { border: 1px solid var(--color-danger); color: var(--color-danger); }
     .status-badge.assigned { border: 1px solid var(--color-primary); color: var(--color-primary); }
+    
+    .photo-preview {
+      width: 100%;
+      height: 180px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
     
     .section {
       margin-bottom: 20px;
@@ -146,5 +164,10 @@ export class NeedBottomSheetComponent {
 
   close(): void {
     this.bottomSheetRef.dismiss();
+  }
+
+  openDirections() {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${this.data.need.lat},${this.data.need.lng}`;
+    window.open(url, '_blank');
   }
 }
