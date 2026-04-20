@@ -84,6 +84,22 @@ import { Volunteer } from '../../models';
             </span>
           </div>
         </section>
+
+        <mat-divider></mat-divider>
+
+        <section class="info-section mt-4">
+          <h3>Recent Activity</h3>
+          <div class="activities-list">
+            <div *ngFor="let activity of activities() | async" class="activity-item">
+              <mat-icon class="activity-icon">history</mat-icon>
+              <div class="activity-content">
+                <p class="activity-desc">{{ activity.description }}</p>
+                <span class="activity-time">{{ activity.timestamp.toDate() | date:'medium' }}</span>
+              </div>
+            </div>
+            <div *ngIf="(activities() | async)?.length === 0" class="empty-msg">No recent activity recorded.</div>
+          </div>
+        </section>
       </mat-dialog-content>
 
       <mat-dialog-actions align="end">
@@ -167,11 +183,41 @@ import { Volunteer } from '../../models';
     }
     .mt-4 { margin-top: 16px; }
     .empty-msg { font-size: 12px; color: var(--color-text-hint); font-style: italic; }
+
+    .activities-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .activity-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: var(--color-text-hint);
+      margin-top: 2px;
+    }
+    .activity-desc {
+      font-size: 13px;
+      margin: 0;
+      color: var(--color-text-primary);
+    }
+    .activity-time {
+      font-size: 11px;
+      color: var(--color-text-hint);
+    }
   `]
 })
 export class VolunteerProfileComponent {
   private dialogRef = inject(MatDialogRef<VolunteerProfileComponent>);
+  private firestore = inject(FirestoreService);
+  
   volunteer: Volunteer = inject(MAT_DIALOG_DATA).volunteer;
+  activities = signal(this.firestore.getVolunteerActivities(this.volunteer.id));
 
   close() {
     this.dialogRef.close();
