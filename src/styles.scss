@@ -1,4 +1,7 @@
-/* styles.scss */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import '@angular/material/prebuilt-themes/azure-blue.css';
 
 :root {
@@ -31,6 +34,20 @@
   --card-pad-v: 12px;
   --card-pad-h: 14px;
   --card-gap: 8px;
+}
+
+.dark-theme {
+  --color-surface: #121212;
+  --color-card: #1e1e1e;
+  --color-border: #333333;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b3b3b3;
+  --color-text-hint: #808080;
+  --color-primary-light: #1a2a27;
+  --color-warning-light: #2a241a;
+  --color-danger-light: #2a1a1a;
+  --color-success-light: #1a2a1a;
+  --color-info-light: #1a1e2a;
 }
 
 body {
@@ -66,5 +83,23 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 }
-.text-center { text-align: center; }  
+.text-center { text-align: center; }
+
+/* Snackbar Styles */
+.success-snackbar {
+  --mdc-snackbar-container-color: var(--color-success);
+  --mdc-snackbar-supporting-text-color: #ffffff;
+}
+.error-snackbar {
+  --mdc-snackbar-container-color: var(--color-danger);
+  --mdc-snackbar-supporting-text-color: #ffffff;
+}
+.warning-snackbar {
+  --mdc-snackbar-container-color: var(--color-warning);
+  --mdc-snackbar-supporting-text-color: #ffffff;
+}
+.info-snackbar {
+  --mdc-snackbar-container-color: var(--color-info);
+  --mdc-snackbar-supporting-text-color: #ffffff;
+}
  

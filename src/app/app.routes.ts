@@ -33,10 +33,24 @@ export const routes: Routes = [
           ),
       },
       {
-        path: "volunteers",
+        path: 'volunteers',
         loadComponent: () =>
-          import("./features/volunteers/volunteers.component").then(
+          import('./features/volunteers/volunteers.component').then(
             (m) => m.VolunteersComponent,
+          ),
+      },
+      {
+        path: 'resource-vault',
+        loadComponent: () =>
+          import('./features/resource-vault/resource-vault.component').then(
+            (m) => m.ResourceVaultComponent,
+          ),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/settings/settings.component').then(
+            (m) => m.SettingsComponent,
           ),
       },
       {
