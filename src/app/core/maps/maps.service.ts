@@ -127,4 +127,23 @@ export class MapsService {
       opacity: 0.7
     });
   }
+
+  /**
+   * Creates proximity rings (circles) around a location
+   */
+  createProximityRings(map: google.maps.Map, center: google.maps.LatLngLiteral, radii: number[] = [1000, 3000, 5000]): google.maps.Circle[] {
+    return radii.map((radius, index) => {
+      return new google.maps.Circle({
+        strokeColor: '#0a6b5e',
+        strokeOpacity: 0.8 / (index + 1),
+        strokeWeight: 2,
+        fillColor: '#0a6b5e',
+        fillOpacity: 0.1 / (index + 1),
+        map: map,
+        center: center,
+        radius: radius,
+        clickable: false
+      });
+    });
+  }
 }

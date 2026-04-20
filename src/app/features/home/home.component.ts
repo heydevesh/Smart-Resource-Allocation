@@ -12,6 +12,8 @@ import { FirestoreService } from '../../core/firebase/firestore.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { AgentService } from '../../core/ai/agent.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
+import { NeedBottomSheetComponent } from '../../shared/components/need-bottom-sheet/need-bottom-sheet.component';
 
 @Component({
   selector: 'app-home',
@@ -19,12 +21,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
   imports: [
     CommonModule, 
     MatIconModule, 
-    MatButtonModule, 
-    StatCardComponent, 
-    NeedCardComponent, 
+    MatButtonModule,
+    StatCardComponent,
+    NeedCardComponent,
     TaskCardComponent,
     EmptyStateComponent,
-    RouterLink
+    RouterLink,
+    MatBottomSheetModule
   ],
   template: `
     <div class="flex flex-col flex-1 h-full w-full overflow-hidden bg-surface">
@@ -206,6 +209,7 @@ export class HomeComponent implements OnInit {
   private auth = inject(AuthService);
   private agentService = inject(AgentService);
   private router = inject(Router);
+  private bottomSheet = inject(MatBottomSheet);
   
   user = toSignal(this.auth.currentUser$);
   recentNeeds = toSignal(this.firestore.getOpenNeeds(), { initialValue: [] });
@@ -235,9 +239,7 @@ export class HomeComponent implements OnInit {
     }, 1500);
   }
 
-  firstName(): string {
-    return this.user()?.displayName?.split(' ')[0] || 'Rahul';
-  }
+  firstName = computed(() => this.user()?.displayName?.split(' ')[0] || 'Rahul');
 
   getUrgencyColor(urgency: string): string {
     switch (urgency) {
@@ -277,13 +279,16 @@ export class HomeComponent implements OnInit {
   }
 
   onNeedClick(need: Need) {
-    console.log('Need clicked', need);
+    this.bottomSheet.open(NeedBottomSheetComponent, {
+      data: { need }
+    });
   }
 
   onAssignClick(event: Event, need: Need) {
     event.stopPropagation();
-    console.log('Assign clicked for', need);
-    this.router.navigate(['/tasks']);
+    this.bottomSheet.open(NeedBottomSheetComponent, {
+      data: { need }
+    });
   }
 }
 

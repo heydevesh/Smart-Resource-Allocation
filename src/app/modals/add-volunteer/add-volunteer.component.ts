@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FirestoreService } from '../../core/firebase/firestore.service';
 
 @Component({
@@ -23,7 +24,8 @@ import { FirestoreService } from '../../core/firebase/firestore.service';
     MatButtonModule, 
     MatSelectModule, 
     MatChipsModule,
-    MatIconModule
+    MatIconModule,
+    MatTooltipModule
   ],
   template: `
     <h2 mat-dialog-title class="font-serif text-2xl text-primary">Register New Volunteer</h2>
@@ -51,15 +53,20 @@ import { FirestoreService } from '../../core/firebase/firestore.service';
           </mat-select>
         </mat-form-field>
 
-        <div class="grid grid-cols-2 gap-4">
-          <mat-form-field appearance="outline">
-            <mat-label>Latitude</mat-label>
-            <input matInput type="number" formControlName="lat">
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Longitude</mat-label>
-            <input matInput type="number" formControlName="lng">
-          </mat-form-field>
+        <div class="flex items-center gap-4">
+          <div class="grid grid-cols-2 gap-4 flex-1">
+            <mat-form-field appearance="outline">
+              <mat-label>Latitude</mat-label>
+              <input matInput type="number" formControlName="lat">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Longitude</mat-label>
+              <input matInput type="number" formControlName="lng">
+            </mat-form-field>
+          </div>
+          <button mat-icon-button color="primary" type="button" (click)="getCurrentLocation()" matTooltip="Get Current Location" class="mb-5">
+            <mat-icon>my_location</mat-icon>
+          </button>
         </div>
       </form>
     </mat-dialog-content>
@@ -83,6 +90,17 @@ export class AddVolunteerComponent {
     lat: [19.0444, Validators.required],
     lng: [72.8501, Validators.required]
   });
+
+  getCurrentLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        this.volunteerForm.patchValue({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+      });
+    }
+  }
 
   onCancel() {
     this.dialogRef.close();

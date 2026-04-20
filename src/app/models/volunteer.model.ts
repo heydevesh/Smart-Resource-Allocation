@@ -13,4 +13,5 @@ export interface Volunteer {
   totalHours: number;
   badges: string[];
   active: boolean;
+  lastActive?: Timestamp;
 }

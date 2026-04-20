@@ -42,13 +42,21 @@ export class AuthService {
     await signInWithPopup(this.auth, provider);
   }
 
+  async signOut() {
+    await this.auth.signOut();
+    this.currentUserSubject.next(null);
+  }
+
   setMockAdmin() {
-    this.currentUserSubject.next({
+    const mock: User = {
       uid: 'mock-admin',
       email: 'admin@sahaay.org',
       displayName: 'Demo Admin',
       role: 'admin',
       region: 'Mumbai'
-    });
+    };
+    this.currentUserSubject.next(mock);
+    // Also save to localStorage for session persistence if needed, 
+    // but here we rely on BehaviorSubject for the demo.
   }
 }

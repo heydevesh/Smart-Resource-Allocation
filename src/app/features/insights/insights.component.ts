@@ -63,16 +63,19 @@ import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader
         
         <div class="ai-card">
           <div class="card-title">
-            <mat-icon class="sparkle">auto_awesome</mat-icon> AI Generated Report
+            <mat-icon class="sparkle">auto_awesome</mat-icon> {{ reportHeadline() }}
           </div>
-          <p class="report-text">
-            "Over the past week, Sahaay volunteers in Dharavi and Kurla successfully responded to 142 critical needs. 
-            With the onset of early monsoons, we saw a 30% spike in shelter requests. Thanks to our rapid AI matching, 
-            average response time decreased by 15 minutes, directly impacting 500+ vulnerable families."
+          <div *ngIf="generatingReport()">
+            <app-skeleton-loader height="100px" class="mb-4"></app-skeleton-loader>
+          </div>
+          <p class="report-text" *ngIf="!generatingReport()">
+            "{{ reportNarrative() }}"
           </p>
           <div class="actions">
-            <button mat-stroked-button color="primary">Generate New</button>
-            <button mat-flat-button color="primary">Export PDF</button>
+            <button mat-stroked-button color="primary" (click)="generateReport()" [disabled]="generatingReport()">
+              {{ generatingReport() ? 'Generating...' : 'Generate New' }}
+            </button>
+            <button mat-flat-button color="primary" [disabled]="generatingReport()">Export PDF</button>
           </div>
         </div>
       </section>
@@ -296,6 +299,36 @@ export class InsightsComponent {
     { name: 'May', missions: 190, impact: 140 },
     { name: 'Jun', missions: 155, impact: 110 }
   ];
+
+  reportHeadline = signal<string>('Operational Impact Report');
+  reportNarrative = signal<string>('Over the past week, Sahaay volunteers in Dharavi and Kurla successfully responded to 142 critical needs. With the onset of early monsoons, we saw a 30% spike in shelter requests. Thanks to our rapid AI matching, average response time decreased by 15 minutes, directly impacting 500+ vulnerable families.');
+  generatingReport = signal<boolean>(false);
+
+  async generateReport() {
+    this.generatingReport.set(true);
+    try {
+      // Mock stats for narration
+      const stats = {
+        totalNeeds: 142,
+        resolvedNeeds: 128,
+        activeVolunteers: 45,
+        region: 'Mumbai'
+      };
+      
+      const result = await this.agentService.narrateReport(stats as any);
+      if (result && typeof result !== 'string') {
+        const typedResult = result as { narrative: string, headline: string, keyStats: string[] };
+        this.reportNarrative.set(typedResult.narrative);
+        this.reportHeadline.set(typedResult.headline);
+      } else if (typeof result === 'string') {
+        this.reportNarrative.set(result);
+      }
+    } catch (e) {
+      console.error('Failed to generate report:', e);
+    } finally {
+      this.generatingReport.set(false);
+    }
+  }
 
   async loadPredictions() {
     this.loadingPredictions.set(true);
