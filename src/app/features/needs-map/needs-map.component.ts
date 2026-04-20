@@ -397,6 +397,7 @@ export class NeedsMapComponent implements AfterViewInit {
   
   private map?: google.maps.Map;
   private markers: google.maps.Marker[] = [];
+  private heatmap?: google.maps.visualization.HeatmapLayer;
 
   constructor() {
     effect(() => {
@@ -447,6 +448,11 @@ export class NeedsMapComponent implements AfterViewInit {
 
       this.markers.push(marker);
     });
+    
+    // Update heatmap if active
+    if (this.showHeatmap()) {
+      this.updateMapLayers();
+    }
   }
 
   private getIconForUrgency(urgency: string): any {
@@ -475,11 +481,26 @@ export class NeedsMapComponent implements AfterViewInit {
 
   toggleHeatmap() {
     this.showHeatmap.update(v => !v);
-    // Note: Actual heatmap implementation requires 'visualization' library
-    // which would be added to MapsService later.
+    this.updateMapLayers();
+  }
+
+  private updateMapLayers() {
+    if (!this.map) return;
+
     if (this.showHeatmap()) {
+      // Hide markers and show heatmap
       this.markers.forEach(m => m.setMap(null));
+      const data = this.filteredNeeds().map(n => ({ lat: n.lat, lng: n.lng }));
+      
+      if (this.heatmap) {
+        this.heatmap.setMap(null);
+      }
+      this.heatmap = this.mapsService.createHeatmap(this.map, data);
     } else {
+      // Hide heatmap and show markers
+      if (this.heatmap) {
+        this.heatmap.setMap(null);
+      }
       this.markers.forEach(m => m.setMap(this.map!));
     }
   }
