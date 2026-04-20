@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, doc, docData, collectionData, query, where, orderBy, setDoc, updateDoc, deleteDoc, enableIndexedDbPersistence } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
-import { Need, Task, Volunteer } from '../../models';
+import { Need, Task, Volunteer, Activity } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
@@ -93,6 +93,20 @@ export class FirestoreService {
     await updateDoc(volunteerDoc, data);
   }
 
+  async addVolunteer(volunteer: Partial<Volunteer>): Promise<void> {
+    const newDocRef = doc(collection(this.firestore, 'volunteers'));
+    const volWithId = { 
+      ...volunteer, 
+      id: newDocRef.id,
+      rating: 0,
+      tasksCompleted: 0,
+      totalHours: 0,
+      active: true,
+      available: true
+    };
+    await setDoc(newDocRef, volWithId);
+  }
+
   async semanticSearch(queryStr: string): Promise<Need[]> {
     // Note: To implement actual vector search from Angular, we typically call a Cloud Function
     // that uses the Vertex AI embedding model and performs the vector search,
@@ -101,5 +115,22 @@ export class FirestoreService {
     // For now, this is a placeholder per the design.
     console.log('Semantic search requested for:', queryStr);
     return [];
+  }
+
+  // --- Activities ---
+  getRecentActivities(limitCount: number = 10): Observable<Activity[]> {
+    const activitiesRef = collection(this.firestore, 'activities');
+    const q = query(activitiesRef, orderBy('timestamp', 'desc'));
+    return collectionData(q, { idField: 'id' }) as Observable<Activity[]>;
+  }
+
+  async logActivity(activity: Partial<Activity>): Promise<void> {
+    const activitiesRef = collection(this.firestore, 'activities');
+    const newDocRef = doc(activitiesRef);
+    await setDoc(newDocRef, {
+      ...activity,
+      id: newDocRef.id,
+      timestamp: new Date()
+    });
   }
 }
