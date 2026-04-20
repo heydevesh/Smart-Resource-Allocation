@@ -89,7 +89,7 @@ import { MatDividerModule } from '@angular/material/divider';
             <button mat-icon-button class="more-btn"><mat-icon>more_horiz</mat-icon></button>
           </div>
           <div class="lane-content">
-            <app-task-card *ngFor="let task of getTasksByStatus('pending')" [task]="task"></app-task-card>
+            <app-task-card *ngFor="let task of getTasksByStatus('pending')" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
             <div class="empty-lane" *ngIf="getCount('pending') === 0">No open tasks</div>
           </div>
         </div>
@@ -101,7 +101,7 @@ import { MatDividerModule } from '@angular/material/divider';
             <button mat-icon-button class="more-btn"><mat-icon>more_horiz</mat-icon></button>
           </div>
           <div class="lane-content">
-            <app-task-card *ngFor="let task of getTasksByStatus('active', 0)" [task]="task"></app-task-card>
+            <app-task-card *ngFor="let task of getTasksByStatus('active', 0)" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
             <div class="empty-lane" *ngIf="getCount('active', 0) === 0">No assigned tasks</div>
           </div>
         </div>
@@ -124,7 +124,7 @@ import { MatDividerModule } from '@angular/material/divider';
               <button class="insight-action">Review Suggestion</button>
             </div>
 
-            <app-task-card *ngFor="let task of getTasksByStatus('active', 1)" [task]="task"></app-task-card>
+            <app-task-card *ngFor="let task of getTasksByStatus('active', 1)" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
             <div class="empty-lane" *ngIf="getCount('active', 1) === 0 && !hasInsight()">No tasks in progress</div>
           </div>
         </div>
@@ -136,7 +136,7 @@ import { MatDividerModule } from '@angular/material/divider';
             <button mat-icon-button class="more-btn"><mat-icon>more_horiz</mat-icon></button>
           </div>
           <div class="lane-content">
-            <app-task-card *ngFor="let task of getTasksByStatus('completed')" [task]="task"></app-task-card>
+            <app-task-card *ngFor="let task of getTasksByStatus('completed')" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
             <div class="empty-lane" *ngIf="getCount('completed') === 0">No resolved tasks</div>
           </div>
         </div>
