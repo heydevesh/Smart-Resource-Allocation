@@ -38,7 +38,7 @@ import { MatDividerModule } from '@angular/material/divider';
 
         <div class="filter-actions">
           <button mat-stroked-button [matMenuTriggerFor]="sortMenu" class="control-btn">
-            <mat-icon>sort</mat-icon>
+            <mat-icon>swap_vert</mat-icon>
             Sort: Urgency
           </button>
           <mat-menu #sortMenu="matMenu">
@@ -75,7 +75,7 @@ import { MatDividerModule } from '@angular/material/divider';
           </mat-menu>
 
           <button mat-flat-button color="primary" class="deploy-btn" (click)="openCreateTask()">
-            <mat-icon>add</mat-icon>
+            <mat-icon>assignment_add</mat-icon>
             Deploy Operation
           </button>
         </div>
@@ -86,7 +86,7 @@ import { MatDividerModule } from '@angular/material/divider';
         <div class="lane">
           <div class="lane-header">
             <h3 class="lane-title">Open <span class="count">{{ getCount('pending') }}</span></h3>
-            <button mat-icon-button class="more-btn"><mat-icon>more_horiz</mat-icon></button>
+            <button mat-icon-button class="more-btn"><mat-icon>more_vert</mat-icon></button>
           </div>
           <div class="lane-content">
             <app-task-card *ngFor="let task of getTasksByStatus('pending')" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
@@ -98,7 +98,7 @@ import { MatDividerModule } from '@angular/material/divider';
         <div class="lane">
           <div class="lane-header">
             <h3 class="lane-title">Assigned <span class="count">{{ getCount('active', 0) }}</span></h3>
-            <button mat-icon-button class="more-btn"><mat-icon>more_horiz</mat-icon></button>
+            <button mat-icon-button class="more-btn"><mat-icon>more_vert</mat-icon></button>
           </div>
           <div class="lane-content">
             <app-task-card *ngFor="let task of getTasksByStatus('active', 0)" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
@@ -110,13 +110,13 @@ import { MatDividerModule } from '@angular/material/divider';
         <div class="lane">
           <div class="lane-header">
             <h3 class="lane-title">In Progress <span class="count">{{ getCount('active', 1) }}</span></h3>
-            <button mat-icon-button class="more-btn"><mat-icon>more_horiz</mat-icon></button>
+            <button mat-icon-button class="more-btn"><mat-icon>more_vert</mat-icon></button>
           </div>
           <div class="lane-content">
             <!-- AI Insight Card -->
             <div class="ai-insight-card" *ngIf="hasInsight()">
               <div class="insight-header">
-                <mat-icon class="sparkle">auto_awesome</mat-icon>
+                <mat-icon class="sparkle">magic_button</mat-icon>
                 <span class="badge">AI Insight</span>
               </div>
               <h4 class="insight-title">Resource Bottleneck Detected</h4>
@@ -133,7 +133,7 @@ import { MatDividerModule } from '@angular/material/divider';
         <div class="lane resolved">
           <div class="lane-header">
             <h3 class="lane-title">Resolved <span class="count">{{ getCount('completed') }}</span></h3>
-            <button mat-icon-button class="more-btn"><mat-icon>more_horiz</mat-icon></button>
+            <button mat-icon-button class="more-btn"><mat-icon>more_vert</mat-icon></button>
           </div>
           <div class="lane-content">
             <app-task-card *ngFor="let task of getTasksByStatus('completed')" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>

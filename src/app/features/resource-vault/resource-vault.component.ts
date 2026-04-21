@@ -14,7 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
         <h1 class="title">Resource Vault</h1>
       </div>
       <button mat-flat-button class="request-btn">
-        <mat-icon>add_circle</mat-icon>
+        <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">add_circle</mat-icon>
         Request Resource
       </button>
     </div>
@@ -24,7 +24,7 @@ import { MatButtonModule } from '@angular/material/button';
       <div class="alert-card">
         <div class="alert-content">
           <div class="icon-wrapper">
-            <mat-icon>auto_awesome</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">auto_awesome</mat-icon>
           </div>
           <div>
             <h3>Forecast Alert: Monsoon Surge</h3>
@@ -82,7 +82,7 @@ import { MatButtonModule } from '@angular/material/button';
             <div class="item-info">
               <div class="title-row">
                 <h3>Water Supply</h3>
-                <mat-icon>warning</mat-icon>
+                <mat-icon fontSet="material-symbols-rounded">warning</mat-icon>
               </div>
               <p>Bottled water, purification tablets.</p>
             </div>
@@ -126,7 +126,7 @@ import { MatButtonModule } from '@angular/material/button';
           <div class="map-placeholder">
             <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800" alt="Warehouse Map">
             <div class="pin">
-              <mat-icon>location_on</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">location_on</mat-icon>
             </div>
           </div>
           <div class="map-info">
@@ -134,7 +134,7 @@ import { MatButtonModule } from '@angular/material/button';
               <h4>HQ Warehouse Alpha</h4>
               <p class="status"><span class="dot"></span> Operational</p>
             </div>
-            <button mat-icon-button><mat-icon>open_in_new</mat-icon></button>
+            <button mat-icon-button><mat-icon fontSet="material-symbols-rounded">open_in_new</mat-icon></button>
           </div>
         </div>
 
@@ -146,7 +146,7 @@ import { MatButtonModule } from '@angular/material/button';
           <div class="feed-items">
             <div class="feed-item">
               <div class="icon-box">
-                <mat-icon>local_shipping</mat-icon>
+                <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">local_shipping</mat-icon>
               </div>
               <div class="feed-content">
                 <div class="feed-title">
@@ -158,7 +158,7 @@ import { MatButtonModule } from '@angular/material/button';
             </div>
             <div class="feed-item">
               <div class="icon-box primary">
-                <mat-icon>flight_land</mat-icon>
+                <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">flight_land</mat-icon>
               </div>
               <div class="feed-content">
                 <div class="feed-title">
@@ -643,3 +643,4 @@ import { MatButtonModule } from '@angular/material/button';
   `]
 })
 export class ResourceVaultComponent {}
+

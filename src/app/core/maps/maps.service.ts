@@ -1,10 +1,12 @@
 import { Injectable, signal } from '@angular/core';
+import { GeolocationService } from './geolocation.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MapsService {
   isLoaded = signal(false);
+  geolocation = new GeolocationService();
 
   // Mumbai Center (approx Dharavi area)
   readonly defaultCenter: google.maps.LatLngLiteral = { lat: 19.0444, lng: 72.8501 };

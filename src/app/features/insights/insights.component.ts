@@ -24,12 +24,12 @@ import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader
       <section class="insight-section">
         <div class="section-header">
           <h2>Surge Predictions</h2>
-          <button mat-icon-button color="primary" (click)="loadPredictions()"><mat-icon>refresh</mat-icon></button>
+          <button mat-icon-button color="primary" (click)="loadPredictions()"><mat-icon>sync</mat-icon></button>
         </div>
         
         <div class="ai-card">
           <div class="card-title">
-            <mat-icon class="sparkle">auto_awesome</mat-icon> Vertex AI Forecast
+            <mat-icon class="sparkle">magic_button</mat-icon> Vertex AI Forecast
           </div>
           
           <ng-container *ngIf="loadingPredictions()">
@@ -63,7 +63,7 @@ import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader
         
         <div class="ai-card">
           <div class="card-title">
-            <mat-icon class="sparkle">auto_awesome</mat-icon> {{ reportHeadline() }}
+            <mat-icon class="sparkle">magic_button</mat-icon> {{ reportHeadline() }}
           </div>
           <div *ngIf="generatingReport()">
             <app-skeleton-loader height="100px" class="mb-4"></app-skeleton-loader>

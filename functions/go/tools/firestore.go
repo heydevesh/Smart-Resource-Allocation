@@ -3,46 +3,80 @@ package tools
 import (
 	"context"
 	"fmt"
+	"math"
+	"sahaay/functions/config"
 
 	"cloud.google.com/go/firestore"
-	"sahaay/functions/config"
 )
 
-var firestoreClient *firestore.Client
-
-func init() {
-	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, config.Project)
-	if err != nil {
-		fmt.Printf("Failed to create firestore client: %v\n", err)
-		return
-	}
-	firestoreClient = client
+func createClient(ctx context.Context) (*firestore.Client, error) {
+	return firestore.NewClient(ctx, config.Project)
 }
 
-// GetNeedsByCategory fetches open needs from Firestore filtered by category
-func GetNeedsByCategory(ctx context.Context, category string) ([]map[string]any, error) {
-	iter := firestoreClient.Collection("needs").
-		Where("status", "==", "open").
-		Where("category", "==", category).
+// GetTask retrieves a task document from Firestore.
+func GetTask(ctx context.Context, taskID string) (map[string]any, error) {
+	client, err := createClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	doc, err := client.Collection("tasks").Doc(taskID).Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return doc.Data(), nil
+}
+
+// SearchVolunteers finds available volunteers within a radius.
+func SearchVolunteers(ctx context.Context, skill string, lat, lng float64, radiusKm float64) ([]map[string]any, error) {
+	client, err := createClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	// Simplistic bounding box query (real apps use GeoFirestore or S2 cells)
+	// 1 degree lat is ~111km
+	latDelta := radiusKm / 111.0
+	lngDelta := radiusKm / (111.0 * math.Cos(lat*math.Pi/180.0))
+
+	iter := client.Collection("volunteers").
+		Where("available", "==", true).
+		Where("lat", ">=", lat-latDelta).
+		Where("lat", "<=", lat+latDelta).
 		Documents(ctx)
 	
-	var needs []map[string]any
-	for {
-		doc, err := iter.Next()
-		if err != nil {
-			break
-		}
-		needs = append(needs, doc.Data())
+	docs, err := iter.GetAll()
+	if err != nil {
+		return nil, err
 	}
-	return needs, nil
+
+	var results []map[string]any
+	for _, doc := range docs {
+		data := doc.Data()
+		vLat := data["lat"].(float64)
+		vLng := data["lng"].(float64)
+		
+		// Refine with exact distance
+		dist := haversine(lat, lng, vLat, vLng)
+		if dist <= radiusKm {
+			data["id"] = doc.Ref.ID
+			data["distance"] = dist
+			results = append(results, data)
+		}
+	}
+
+	return results, nil
 }
 
-// UpdateTaskStatus updates a task's status and progress
-func UpdateTaskStatus(ctx context.Context, taskID string, status string, progress int) error {
-	_, err := firestoreClient.Collection("tasks").Doc(taskID).Update(ctx, []firestore.Update{
-		{Path: "status", Value: status},
-		{Path: "progress", Value: progress},
-	})
-	return err
+func haversine(lat1, lon1, lat2, lon2 float64) float64 {
+	const R = 6371.0 // km
+	dLat := (lat2 - lat1) * math.Pi / 180.0
+	dLon := (lon2 - lon1) * math.Pi / 180.0
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Cos(lat1*math.Pi/180.0)*math.Cos(lat2*math.Pi/180.0)*
+			math.Sin(dLon/2)*math.Sin(dLon/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	return R * c
 }

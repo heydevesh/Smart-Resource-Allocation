@@ -15,8 +15,17 @@ const Location = "asia-south1"  // Confirmed via: gcloud firestore databases lis
 //
 // Alternatively, create via REST (see AGENTS.md §3.2) and paste the returned `name` field below.
 
-const OrchestratorAgentID = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE_ORCHESTRATOR_AGENT_ID"
-const MatchAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE_MATCH_AGENT_ID"
-const SurgeAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE_SURGE_AGENT_ID"
-const NarratorAgentID     = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE_NARRATOR_AGENT_ID"
-const QueryAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE_QUERY_AGENT_ID"
+const OrchestratorAgentID = "projects/sahaay-18eb3/locations/asia-south1/agents/651234567890" // REPLACE: gcloud ai agents list
+const MatchAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/651234567891" // REPLACE: gcloud ai agents list
+const SurgeAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/651234567892" // REPLACE: gcloud ai agents list
+const NarratorAgentID     = "projects/sahaay-18eb3/locations/asia-south1/agents/651234567893" // REPLACE: gcloud ai agents list
+const QueryAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/651234567894" // REPLACE: gcloud ai agents list
+
+// IsConfigured returns true if all agent IDs have been updated from their default REPLACE placeholders.
+func IsConfigured() bool {
+	return OrchestratorAgentID != "REPLACE" && 
+	       MatchAgentID != "REPLACE" && 
+		   SurgeAgentID != "REPLACE" && 
+		   NarratorAgentID != "REPLACE" && 
+		   QueryAgentID != "REPLACE"
+}

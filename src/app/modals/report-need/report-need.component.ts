@@ -62,9 +62,9 @@ export class ReportNeedComponent {
   async detectLocation() {
     this.isDetectingLocation = true;
     try {
-      const pos = await this.geo.getCurrentPosition();
-      this.currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      
+      const coords = await this.geo.getCurrentPosition();
+      this.currentCoords = coords;
+
       this.reportForm.patchValue({
         locationName: `MUM-WARD-${Math.floor(Math.random() * 24) + 1} (${this.currentCoords.lat.toFixed(4)}, ${this.currentCoords.lng.toFixed(4)})`
       });

@@ -1,11 +1,12 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
-import { Volunteer } from '../../models';
+import { Volunteer, Activity } from '../../models';
+import { FirestoreService } from '../../core/firebase/firestore.service';
 
 @Component({
   selector: 'app-volunteer-profile',
@@ -90,14 +91,14 @@ import { Volunteer } from '../../models';
         <section class="info-section mt-4">
           <h3>Recent Activity</h3>
           <div class="activities-list">
-            <div *ngFor="let activity of activities() | async" class="activity-item">
+            <div *ngFor="let activity of activities()" class="activity-item">
               <mat-icon class="activity-icon">history</mat-icon>
               <div class="activity-content">
-                <p class="activity-desc">{{ activity.description }}</p>
-                <span class="activity-time">{{ activity.timestamp.toDate() | date:'medium' }}</span>
+                <p class="activity-desc">{{ activity.text }}</p>
+                <span class="activity-time">{{ activity.timestamp?.toDate ? (activity.timestamp.toDate() | date:'medium') : activity.timestamp }}</span>
               </div>
             </div>
-            <div *ngIf="(activities() | async)?.length === 0" class="empty-msg">No recent activity recorded.</div>
+            <div *ngIf="activities().length === 0" class="empty-msg">No recent activity recorded.</div>
           </div>
         </section>
       </mat-dialog-content>
@@ -217,7 +218,16 @@ export class VolunteerProfileComponent {
   private firestore = inject(FirestoreService);
   
   volunteer: Volunteer = inject(MAT_DIALOG_DATA).volunteer;
-  activities = signal(this.firestore.getVolunteerActivities(this.volunteer.id));
+  activities = signal<Activity[]>([]);
+
+  constructor() {
+    this.loadActivities();
+  }
+
+  async loadActivities() {
+    const activities = await this.firestore.getVolunteerActivities(this.volunteer.id).toPromise();
+    this.activities.set(activities || []);
+  }
 
   close() {
     this.dialogRef.close();

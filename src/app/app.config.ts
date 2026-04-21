@@ -8,6 +8,7 @@ import { getFunctions, provideFunctions } from '@angular/fire/functions';
 import { getStorage, provideStorage } from '@angular/fire/storage';
 import { getMessaging, provideMessaging } from '@angular/fire/messaging';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { MAT_ICON_DEFAULT_OPTIONS } from '@angular/material/icon';
 
 const firebaseConfig = {
   projectId: "sahaay-18eb3",
@@ -29,6 +30,7 @@ export const appConfig: ApplicationConfig = {
     provideFirestore(() => getFirestore()),
     provideFunctions(() => getFunctions()),
     provideStorage(() => getStorage()),
-    provideMessaging(() => getMessaging())
+    provideMessaging(() => getMessaging()),
+    { provide: MAT_ICON_DEFAULT_OPTIONS, useValue: { fontSet: 'material-symbols-rounded' } }
   ]
 };

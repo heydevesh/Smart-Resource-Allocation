@@ -23,58 +23,72 @@ import { toSignal } from '@angular/core/rxjs-interop';
     MatButtonModule,
     MatToolbarModule,
     MatMenuModule,
-    MatDialogModule
+    MatDialogModule,
+    MatMenuModule
   ],
   template: `
     <div class="shell-wrapper">
       <!-- Side Navigation -->
       <nav class="sidebar">
         <div class="sidebar-header">
-          <div class="logo">Sahaay Sentinel</div>
-          <div class="user-brief">
-            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUml2sqpUG8_ntDjxazoKw8YmbxygwzfMS5fVWpEhj1qqE92DjxZiImLEPFlsdiIj5qg7ls3Jprame7OSJRj7mGw0nNtn0Ftk3EFW5SvjtTXH5KjxYUkKPPvSkqfRNvqYldI3ZaPxEOIdjEbybjEqf367gYj4xDoQBSNQRP-vXXrVg6akRcU1Vn-iMJEixSGY820gTYhvG_rzMc24E4LZqocU-T8VqryfhfJYRYqTzERQsrscPEyi6CgKCFAaN4QtNs6Ihu8XN9Pan" alt="Admin">
-            <div class="user-text">
-              <span class="name">Command & Compassion</span>
-              <span class="role">Vanguard Access</span>
-            </div>
-          </div>
+          <h1 class="logo">Sahaay</h1>
+          <p class="ward-label">MUMBAI WARD - 4</p>
         </div>
 
         <ul class="nav-list">
           <li>
+            <a routerLink="/home" routerLinkActive="active" class="nav-link">
+              <mat-icon fontSet="material-symbols-rounded">space_dashboard</mat-icon>
+              <span>Command Center</span>
+            </a>
+          </li>
+          <li>
             <a routerLink="/needs-map" routerLinkActive="active" class="nav-link">
-              <mat-icon>explore</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded">map</mat-icon>
               <span>Crisis Map</span>
             </a>
           </li>
           <li>
             <a routerLink="/tasks" routerLinkActive="active" class="nav-link">
-              <mat-icon>list_alt</mat-icon>
+              <mat-icon fontSet="material-symbols-rounded">task</mat-icon>
               <span>Task Force</span>
             </a>
           </li>
           <li>
-            <a routerLink="/volunteers" routerLinkActive="active" class="nav-link">
-              <mat-icon>diversity_3</mat-icon>
+            <a routerLink="/ngo-registry" routerLinkActive="active" class="nav-link">
+              <mat-icon fontSet="material-symbols-rounded">volunteer_activism</mat-icon>
               <span>NGO Registry</span>
             </a>
           </li>
           <li>
-            <a routerLink="/insights" routerLinkActive="active" class="nav-link">
-              <mat-icon>insights</mat-icon>
-              <span>Insights</span>
+            <a routerLink="/resource-vault" routerLinkActive="active" class="nav-link">
+              <mat-icon fontSet="material-symbols-rounded">inventory_2</mat-icon>
+              <span>Resource Vault</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/settings" routerLinkActive="active" class="nav-link">
+              <mat-icon fontSet="material-symbols-rounded">settings</mat-icon>
+              <span>Settings</span>
             </a>
           </li>
         </ul>
 
         <div class="sidebar-footer">
           <button mat-flat-button class="urgent-report-btn" (click)="openReportNeed()">
+            <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">add_alert</mat-icon>
             Urgent Report
           </button>
           <a class="help-link">
-            <mat-icon>help_outline</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded">help_outline</mat-icon>
             <span>Help Center</span>
           </a>
+          <div class="org-logo-section">
+            <div class="org-avatar">OL</div>
+            <div>
+              <p class="org-name">Organization Logo</p>
+            </div>
+          </div>
         </div>
       </nav>
 
@@ -114,24 +128,24 @@ import { toSignal } from '@angular/core/rxjs-interop';
         <!-- Mobile Bottom Nav -->
         <div class="bottom-nav hidden-desktop">
           <a routerLink="/home" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon>dashboard</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded">space_dashboard</mat-icon>
             <span>Home</span>
           </a>
           <a routerLink="/needs-map" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon>explore</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded">map</mat-icon>
             <span>Map</span>
           </a>
           <a routerLink="/tasks" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon>list_alt</mat-icon>
+            <mat-icon fontSet="material-symbols-rounded">task</mat-icon>
             <span>Tasks</span>
           </a>
-          <a routerLink="/volunteers" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon>diversity_3</mat-icon>
-            <span>NGO</span>
+          <a routerLink="/resource-vault" routerLinkActive="active" class="bottom-nav-item">
+            <mat-icon fontSet="material-symbols-rounded">inventory_2</mat-icon>
+            <span>Vault</span>
           </a>
-          <a routerLink="/insights" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon>insights</mat-icon>
-            <span>Insights</span>
+          <a routerLink="/settings" routerLinkActive="active" class="bottom-nav-item">
+            <mat-icon fontSet="material-symbols-rounded">settings</mat-icon>
+            <span>Settings</span>
           </a>
         </div>
       </div>
@@ -151,7 +165,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
       width: 260px;
       height: 100%;
       background-color: #f9f9f8;
-      border-right: 1px solid var(--color-border);
+      border-right: 1px solid rgba(0, 81, 71, 0.1);
       display: flex;
       flex-direction: column;
       padding: 32px 16px;
@@ -160,23 +174,25 @@ import { toSignal } from '@angular/core/rxjs-interop';
 
     .sidebar-header {
       padding: 0 16px;
-      margin-bottom: 40px;
+      margin-bottom: 24px;
     }
 
     .logo {
-      font-family: var(--font-display);
+      font-family: var(--font-display), serif;
       font-size: 32px;
       margin: 0;
-      color: var(--color-primary);
+      color: var(--color-primary, #005147);
       font-weight: 900;
+      letter-spacing: -0.02em;
     }
 
     .ward-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--color-text-secondary);
-      letter-spacing: 1px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--color-on-surface-variant, #3e4946);
+      letter-spacing: 0.15em;
       margin-top: 4px;
+      text-transform: uppercase;
     }
 
     .nav-list {
@@ -184,64 +200,134 @@ import { toSignal } from '@angular/core/rxjs-interop';
       padding: 0;
       margin: 0;
       flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .nav-link {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       padding: 12px 16px;
-      border-radius: 12px;
+      border-radius: 8px;
       text-decoration: none;
-      color: var(--color-text-secondary);
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      margin-bottom: 4px;
+      color: var(--color-on-surface-variant, #3e4946);
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .nav-link mat-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
     }
 
     .nav-link:hover {
       background-color: white;
-      color: var(--color-primary);
+      color: var(--color-primary, #005147);
     }
 
     .nav-link.active {
-      background-color: white;
-      color: var(--color-primary);
+      background: linear-gradient(90deg, var(--color-primary, #005147), var(--color-primary-container, #0a6b5e));
+      color: white;
       font-weight: 700;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      box-shadow: 0 4px 12px rgba(0, 81, 71, 0.15);
+      transform: scale(1.02);
+    }
+
+    .nav-link.active mat-icon {
+      font-variation-settings: 'FILL' 1;
     }
 
     .sidebar-footer {
       margin-top: auto;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      padding-top: 24px;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--color-outline-variant, #bec9c5);
     }
 
     .urgent-report-btn {
-      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-mid));
+      background: linear-gradient(135deg, var(--color-primary, #005147), var(--color-primary-container, #0a6b5e));
       color: white !important;
       border-radius: 10px;
-      height: 48px;
+      height: 44px;
       font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      box-shadow: 0 12px 32px rgba(0, 81, 71, 0.15);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      mat-icon { font-size: 20px; }
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 40px rgba(0, 81, 71, 0.2);
+      }
     }
 
     .help-link {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 8px 16px;
-      font-size: 13px;
-      color: var(--color-text-secondary);
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-on-surface-variant, #3e4946);
       text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: white;
+        color: var(--color-primary, #005147);
+      }
+
+      mat-icon { font-size: 20px; }
+    }
+
+    .org-logo-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0, 81, 71, 0.06);
+
+      .org-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--color-primary-fixed, #a1f2e1), var(--color-primary-fixed-dim, #85d5c5));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--color-on-primary-fixed, #00201b);
+      }
+
+      .org-name {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--color-primary, #005147);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+      }
     }
 
     /* Main Container Styles */
@@ -349,29 +435,53 @@ import { toSignal } from '@angular/core/rxjs-interop';
       bottom: 0;
       left: 0;
       right: 0;
-      height: 65px;
-      background-color: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(12px);
+      height: 68px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.98));
+      backdrop-filter: blur(16px);
       display: flex;
       justify-content: space-around;
       align-items: center;
-      border-top: 1px solid var(--color-border);
+      border-top: 1px solid var(--color-outline-variant, #bec9c5);
+      box-shadow: 0 -4px 20px rgba(0, 81, 71, 0.08);
       z-index: 100;
-      padding-bottom: env(safe-area-inset-bottom);
+      padding-bottom: max(0px, env(safe-area-inset-bottom));
     }
 
     .bottom-nav-item {
       display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 4px;
       text-decoration: none;
-      color: var(--color-text-hint);
+      color: var(--color-on-surface-variant, #3e4946);
       font-size: 10px;
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+
+      mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        transition: all 0.15s ease;
+      }
+
+      &:hover {
+        background: rgba(0, 81, 71, 0.05);
+        color: var(--color-primary, #005147);
+      }
     }
 
     .bottom-nav-item.active {
-      color: var(--color-primary);
+      color: var(--color-primary, #005147);
+
+      mat-icon {
+        font-variation-settings: 'FILL' 1;
+        transform: scale(1.1);
+      }
     }
 
     /* Responsive Queries */
@@ -405,4 +515,5 @@ export class AppShellComponent {
     });
   }
 }
+
 

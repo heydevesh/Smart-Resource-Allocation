@@ -3,7 +3,17 @@
     "allow": [
       "Bash(flutter pub:*)",
       "Bash(flutter analyze:*)",
-      "Bash(flutter run:*)"
+      "Bash(flutter run:*)",
+      "Bash(npm start *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:4200)",
+      "Bash(findstr :4200)",
+      "Bash(taskkill /F /PID 51372)",
+      "Bash(Stop-Process -Id 51372 -Force)",
+      "Bash(curl -X POST http://localhost:4200)",
+      "Bash(curl http://localhost:4200)",
+      "Bash(dir /s /b src)",
+      "Bash(git restore *)"
     ]
   }
 }

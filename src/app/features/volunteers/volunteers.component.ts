@@ -26,18 +26,18 @@ import { computed } from '@angular/core';
           <p class="page-subtitle">Coordinate your field force.</p>
         </div>
         <button mat-fab class="add-button" color="primary" (click)="openAddVolunteer()">
-          <mat-icon>person_add</mat-icon>
+          <mat-icon>how_to_reg</mat-icon>
         </button>
       </header>
 
       <div class="ai-action-card" *ngIf="showMatcher()">
         <div class="ai-header">
-          <mat-icon class="sparkle">auto_awesome</mat-icon>
+          <mat-icon class="sparkle">magic_button</mat-icon>
           <h3>AI Smart Match</h3>
         </div>
         <p>Select a task to find the best volunteers based on skills, location, and availability.</p>
         <button mat-flat-button color="primary" (click)="runMatch()">
-          <mat-icon>psychology</mat-icon> Run Matching Agent
+          <mat-icon>neurology</mat-icon> Run Matching Agent
         </button>
       </div>
 
@@ -51,7 +51,7 @@ import { computed } from '@angular/core';
         </app-volunteer-card>
         
         <div class="empty-state" *ngIf="filteredVolunteers().length === 0">
-          <mat-icon>group_off</mat-icon>
+          <mat-icon>no_accounts</mat-icon>
           <p>No volunteers found in the directory.</p>
         </div>
       </div>
