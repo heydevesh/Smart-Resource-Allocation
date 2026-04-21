@@ -168,22 +168,63 @@ SECTIONS:
 ## 5. Core Role Ladder & User Journeys
 
 ### 5.1 The Core Role Ladder
-Think of it as a trust-and-responsibility escalation model — users start at the bottom with limited view access and earn upward permissions through verified activity.
+Sahaay uses a trust-based role ladder where access expands as users are vetted and assigned operational duties.
 
-Base roles, each unlocking more of the platform:
-- **Guest / Applicant** — someone who signed up but hasn't been vetted yet.
-- **Volunteer** — verified and active, can see and accept work.
-- **Field Lead** — an elevated volunteer who can manage a small cluster.
-- **NGO Admin / Coordinator** — full operational control over their NGO.
-- **Super Admin** — Sahaay platform-level control across all NGOs.
+Base roles:
+- **Guest / Applicant** — registered but not yet verified by an NGO.
+- **Volunteer** — verified user who can respond to needs and perform assigned work.
+- **Field Lead** — trusted volunteer who can coordinate a small local team.
+- **NGO Admin / Coordinator** — operational manager for one NGO.
+- **Super Admin** — platform-wide manager across all NGOs and regions.
 
-### 5.2 The Journey: Volunteer Onboarding Flow
-This is the most important user journey for India-context viability.
+### 5.2 Permission Model Principles
+- **Read > Action**: Seeing data is broader than modifying it.
+- **Narrow Assignment**: Only specific roles can assign others.
+- **NGO/Ward Scoping**: Access is restricted to the user's ward/NGO unless Super Admin.
+- **Admin-Only Approvals**: Identity verification and role promotion are reserved for Admins.
 
-1. **Self-Registration** — User signs up via phone OTP (already in Sahaay). They fill a short profile: name, ward/area, skills (medical, logistics, driving, etc.), availability, and upload an Aadhaar or voter ID photo for identity verification. Status becomes *Applicant*.
-2. **Admin Reviews the Profile** — The NGO Coordinator sees a "Pending Verifications" inbox on their dashboard. They can view the profile, check the ID document, see the declared skills, and either Accept, Reject with reason, or Shortlist for interview. Shortlisting is important — many Indian NGOs do a WhatsApp/phone call before confirming anyone.
-3. **Volunteer Gets Activated** — Once accepted, the user's role flips to *Volunteer*. They get an in-app notification: "Welcome to Sahaay! You can now view and accept opportunities in Dharavi." They can now see open tasks, indicate availability, and get matched by MatchAgent.
-4. **Task Assignment** — Admin assigns the volunteer to a specific task or the MatchAgent proposes a match. The volunteer must confirm acceptance (this is crucial in India — many volunteers go silent; a confirmation step creates accountability).
+### 5.3 Volunteer Onboarding Journey
+1. **Self-Registration**: Sign up via phone OTP + profile completion (Aadhaar/ID upload). Status: *Applicant*.
+2. **NGO Review**: Coordinator reviews identity and skills in the "Pending Verifications" queue.
+3. **Activation**: Admin selects *Accept*, *Reject*, or *Shortlist*. On acceptance, role flips to *Volunteer*.
+4. **Matched/Assigned**: Volunteer receives MatchAgent suggestions or direct assignments.
+5. **Confirmation**: Volunteer must explicitly *Accept* the task to ensure accountability.
+
+---
+
+## 6. Access Matrix by Tab
+
+### 6.1 Auth & Home
+- **Applicant**: Profile management only. Home shows "Application Under Review" teaser.
+- **Volunteer**: View own assignments, nearby opportunities, and active tasks. Can Accept/Decline.
+- **NGO Admin**: Full Mission Control. View all NGO metrics, confirm AI matches, process applications.
+
+### 6.2 Needs Map
+- **Volunteer**: View relevant nearby needs and own task routes. No heatmap or distribution layers.
+- **Field Lead**: View ward-level heatmap and volunteer proximity within their cluster.
+- **NGO Admin**: Full map control. Proximity rings, clusters, and "Assign from Map" capabilities.
+
+### 6.3 Tasks & Volunteers
+- **Volunteer**: Update progress on assigned tasks. View/edit own profile only.
+- **NGO Admin**: CRUD access to all tasks. Full volunteer directory access including ID proof review and disciplinary notes.
+
+---
+
+## 7. Implementation Roadmap: Role & Capability Keys
+
+### 7.1 Role Keys
+- `applicant`, `volunteer`, `field_lead`, `ngo_admin`, `super_admin`
+
+### 7.2 Capability Flags (Permissions)
+- `view_home`, `view_map`, `view_tasks`, `create_task`, `assign_task`, `approve_volunteer`, `view_insights_ngo`, `manage_inventory`
+
+### 7.3 Approval-Sensitive Actions (MFA/Admin Only)
+- Approving/Rejecting volunteers.
+- Viewing raw identity documents (Aadhaar/Voter ID).
+- Promoting users to Field Lead.
+- Resolving high-value inventory allocations.
+
+
 
 <!-- Update 1: Refined at 2026-04-21 22:45:16 -->
 
@@ -264,3 +305,5 @@ This is the most important user journey for India-context viability.
 <!-- Update 39: Refined at 2026-04-21 22:45:21 -->
 
 <!-- Update 40: Refined at 2026-04-21 22:45:21 -->
+
+<!-- Update 1: Refined at 2026-04-21 23:44:23 -->
