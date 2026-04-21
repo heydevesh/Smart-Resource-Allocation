@@ -186,3 +186,5 @@ This is the most important user journey for India-context viability.
 4. **Task Assignment** — Admin assigns the volunteer to a specific task or the MatchAgent proposes a match. The volunteer must confirm acceptance (this is crucial in India — many volunteers go silent; a confirmation step creates accountability).
 
 <!-- Update 1: Refined at 2026-04-21 22:45:16 -->
+
+<!-- Update 2: Refined at 2026-04-21 22:45:16 -->
