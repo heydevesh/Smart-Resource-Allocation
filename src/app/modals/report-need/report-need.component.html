@@ -59,6 +59,9 @@
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Intelligence Details</mat-label>
         <textarea matInput formControlName="description" rows="3" placeholder="Provide specific details about the situation..."></textarea>
+        <button type="button" mat-icon-button matSuffix (click)="toggleVoiceInput()" [color]="isListening ? 'warn' : ''" [class.pulse-active]="isListening" title="Voice Input">
+          <mat-icon>{{ isListening ? 'mic' : 'mic_none' }}</mat-icon>
+        </button>
       </mat-form-field>
 
       <div class="location-box" [class.detecting]="isDetectingLocation">

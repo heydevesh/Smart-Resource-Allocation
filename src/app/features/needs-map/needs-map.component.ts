@@ -11,6 +11,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { NeedBottomSheetComponent } from '../../shared/components/need-bottom-sheet/need-bottom-sheet.component';
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
 import { ReportNeedComponent } from '../../modals/report-need/report-need.component';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
 @Component({
   selector: 'app-needs-map',
@@ -494,19 +495,26 @@ export class NeedsMapComponent implements AfterViewInit {
   private map?: google.maps.Map;
   private markers: google.maps.Marker[] = [];
   private heatmap?: google.maps.visualization.HeatmapLayer;
+  private markerClusterer?: MarkerClusterer;
 
   constructor() {
     effect(() => {
       this.updateMarkers(this.filteredNeeds());
     });
-  }
 
-  ngAfterViewInit() {
+    // Must be in constructor (injection context) — not ngAfterViewInit
     effect(() => {
-      if (this.mapsService.isLoaded()) {
+      if (this.mapsService.isLoaded() && this.mapElement) {
         this.initMap();
       }
     });
+  }
+
+  ngAfterViewInit() {
+    // ViewChild is now available — if maps already loaded, init
+    if (this.mapsService.isLoaded()) {
+      this.initMap();
+    }
   }
 
   private initMap() {
@@ -522,6 +530,9 @@ export class NeedsMapComponent implements AfterViewInit {
   private updateMarkers(needs: Need[]) {
     if (!this.map) return;
 
+    if (this.markerClusterer) {
+      this.markerClusterer.clearMarkers();
+    }
     this.markers.forEach(m => m.setMap(null));
     this.markers = [];
 
@@ -534,7 +545,6 @@ export class NeedsMapComponent implements AfterViewInit {
     filteredNeeds.forEach(need => {
       const marker = new google.maps.Marker({
         position: { lat: need.lat, lng: need.lng },
-        map: this.map,
         title: need.title,
         icon: this.getIconForUrgency(need.urgency)
       });
@@ -546,10 +556,8 @@ export class NeedsMapComponent implements AfterViewInit {
       this.markers.push(marker);
     });
     
-    // Update heatmap if active
-    if (this.showHeatmap()) {
-      this.updateMapLayers();
-    }
+    // Update layers
+    this.updateMapLayers();
   }
 
   private getIconForUrgency(urgency: string): any {
@@ -587,7 +595,11 @@ export class NeedsMapComponent implements AfterViewInit {
 
     if (this.showHeatmap()) {
       // Hide markers and show heatmap
-      this.markers.forEach(m => m.setMap(null));
+      if (this.markerClusterer) {
+        this.markerClusterer.clearMarkers();
+      } else {
+        this.markers.forEach(m => m.setMap(null));
+      }
       const data = this.filteredNeeds().map(n => ({ lat: n.lat, lng: n.lng }));
       
       if (this.heatmap) {
@@ -599,7 +611,13 @@ export class NeedsMapComponent implements AfterViewInit {
       if (this.heatmap) {
         this.heatmap.setMap(null);
       }
-      this.markers.forEach(m => m.setMap(this.map!));
+      
+      if (!this.markerClusterer) {
+        this.markerClusterer = new MarkerClusterer({ map: this.map, markers: this.markers });
+      } else {
+        this.markerClusterer.clearMarkers();
+        this.markerClusterer.addMarkers(this.markers);
+      }
     }
   }
 
@@ -626,9 +644,9 @@ export class NeedsMapComponent implements AfterViewInit {
 
   onReportNeed() {
     this.dialog.open(ReportNeedComponent, {
-      width: '500px',
-      maxWidth: '95vw',
-      panelClass: 'civic-modal-panel'
+      width: '650px',
+      maxWidth: '90vw',
+      panelClass: 'glass-dialog'
     });
   }
 

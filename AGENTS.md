@@ -12,7 +12,7 @@
 | Problem  | NGOs manage needs via WhatsApp/paper. No unified view. Volunteer matching is manual. |
 | Solution | Real-time needs map + Vertex AI multi-agent matching + surge prediction              |
 | AI layer | Vertex AI Agent Engine → 5 agents → Gemini 2.0 Flash, called via Go Cloud Function   |
-| Users    | Field Workers · Volunteers · NGO Coordinators · Super Admins                         |
+| Users    | Field Workers · Volunteers · NGO Admins · NGO Founders · Super Admins |
 | Pilot    | Mumbai — Dharavi, Kurla, Govandi, Bhandup                                            |
 | SDGs     | 1 · 3 · 4 · 17                                                                       |
 
@@ -637,7 +637,7 @@ async semanticSearch(query: string): Promise<Need[]> {
 ## 11. Auth — Role Guard
 
 ```typescript
-type UserRole = "volunteer" | "fieldworker" | "admin" | "superadmin";
+type UserRole = "volunteer" | "fieldworker" | "ngo_admin" | "ngo_founder" | "superadmin";
 
 export const roleGuard = (allowedRoles: UserRole[]) =>
   inject(AuthService).currentUser$.pipe(
@@ -653,7 +653,8 @@ export const roleGuard = (allowedRoles: UserRole[]) =>
 | ------------ | ------------------------------------------------------------- |
 | Field Worker | Submit needs, update task progress, offline mode              |
 | Volunteer    | View assigned tasks, accept/decline, mark progress            |
-| Admin        | Full dashboard, create tasks, all analytics, generate reports |
+| NGO Admin    | Full dashboard, create tasks, all analytics, generate reports |
+| NGO Founder  | Organization setup, manage registry, admin/founder dashboard  |
 | Super Admin  | Cross-region dashboard, comparative analytics, donor export   |
 
 ---
@@ -790,6 +791,7 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 | Status | Item                                                 |
 | ------ | ---------------------------------------------------- |
 | ✅     | AGENTS.md rewrite — Vertex AI + Go architecture      |
+| ✅     | NGO Founder role — primary registration path         |
 | 🔄     | Angular 18 init + AgentService                       |
 | ⏳     | GCP APIs enabled + 5 Vertex AI agents created        |
 | ⏳     | Go module init + CallAgent deployed                  |

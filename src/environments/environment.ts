@@ -17,8 +17,12 @@ export const environment = {
   //              → Web Push certificates → Key pair → Copy
   vapidKey: 'REPLACE_WITH_VAPID_KEY_FROM_FIREBASE_CONSOLE',
 
+  // ── Firebase App Check ───────────────────────────────────────
+  // Obtain from: Firebase Console → App Check → Project Settings
+  recaptchaSiteKey: 'REPLACE_WITH_RECAPTCHA_V3_SITE_KEY',
+
   // ── Vertex AI / Cloud Functions ──────────────────────────────
-  functionsRegion: 'asia-south1',
+  functionsRegion: 'us-west1',
   vertexAiProject: 'sahaay-18eb3',
 };
 

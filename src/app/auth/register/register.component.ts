@@ -15,6 +15,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AuthService } from '../../core/auth/auth.service';
 import { FirestoreService } from '../../core/firebase/firestore.service';
 import { VerificationService, FaceMatchResult, AadhaarOcrResult } from '../../core/verification/verification.service';
+import { NgoRegistryService } from '../../core/ngo/ngo-registry.service';
+import { NgoDocument } from '../../models';
 
 @Component({
   selector: 'app-register',
@@ -130,7 +132,7 @@ import { VerificationService, FaceMatchResult, AadhaarOcrResult } from '../../co
                 </div>
               </div>
 
-              @if (roleForm.get('preferredRole')?.value !== 'ngo_admin') {
+              @if (roleForm.get('preferredRole')?.value !== 'ngo_founder' && roleForm.get('preferredRole')?.value !== 'ngo_admin') {
                 <div class="field-group">
                   <label class="field-label">Ward / Region</label>
                   <div class="input-wrapper">
@@ -169,41 +171,117 @@ import { VerificationService, FaceMatchResult, AadhaarOcrResult } from '../../co
                   </div>
                 </div>
               } @else {
-                <div class="field-group">
-                  <label class="field-label">NGO Name</label>
-                  <div class="input-wrapper">
-                    <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">business</mat-icon></span>
-                    <input class="auth-input" formControlName="ngoName" placeholder="Your Organization Name">
+                <div class="row-2">
+                  <div class="field-group">
+                    <label class="field-label">NGO Name</label>
+                    <div class="input-wrapper">
+                      <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">business</mat-icon></span>
+                      <input class="auth-input" formControlName="ngoName" placeholder="Organization Name">
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Official Email</label>
+                    <div class="input-wrapper">
+                      <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">mail</mat-icon></span>
+                      <input class="auth-input" type="email" formControlName="ngoEmail" placeholder="contact@ngo.org">
+                    </div>
                   </div>
                 </div>
 
                 <div class="field-group">
-                  <label class="field-label">Registration Number (Optional)</label>
-                  <div class="input-wrapper">
-                    <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">app_registration</mat-icon></span>
-                    <input class="auth-input" formControlName="ngoRegistrationNumber" placeholder="e.g. E-12345 (Mumbai)">
+                  <label class="field-label">NGO Logo (Optional)</label>
+                  <div class="logo-upload-row">
+                    <div class="logo-preview" (click)="logoInput.click()">
+                      @if (ngoLogoPreview()) {
+                        <img [src]="ngoLogoPreview()" alt="NGO Logo">
+                      } @else {
+                        <mat-icon fontSet="material-symbols-rounded">add_a_photo</mat-icon>
+                      }
+                      <input #logoInput type="file" accept="image/*" hidden (change)="onLogoFile($event)">
+                    </div>
+                    <div class="logo-info">
+                      <span class="upload-hint">Square logo preferred. Max 2MB.</span>
+                      @if (ngoLogoFile()) {
+                        <span class="file-name">{{ ngoLogoFile()?.name }}</span>
+                      }
+                    </div>
                   </div>
                 </div>
 
                 <div class="field-group">
-                  <label class="field-label">Official Email</label>
+                  <label class="field-label">About the NGO</label>
                   <div class="input-wrapper">
-                    <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">mail</mat-icon></span>
-                    <input class="auth-input" type="email" formControlName="ngoEmail" placeholder="contact@ngo.org">
+                    <span class="input-icon" style="align-self:flex-start;margin-top:12px"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">description</mat-icon></span>
+                    <textarea class="auth-input auth-textarea" formControlName="ngoDescription" 
+                      placeholder="Describe your organization's mission and history (min 20 chars)" rows="3"></textarea>
                   </div>
                 </div>
-                
+
                 <div class="field-group">
-                  <label class="field-label">Operating Region</label>
-                  <div class="input-wrapper">
-                    <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">location_on</mat-icon></span>
-                    <select class="auth-input auth-select" formControlName="region">
-                      <option value="">Select region</option>
-                      <option value="Dharavi">Dharavi</option>
-                      <option value="Kurla">Kurla</option>
-                      <option value="Govandi">Govandi</option>
-                      <option value="Bhandup">Bhandup</option>
-                    </select>
+                  <label class="field-label">Focus Areas</label>
+                  <div class="chip-grid">
+                    @for (area of focusAreaOptions; track area.value) {
+                      <button type="button" class="chip-btn" 
+                        [class.selected]="roleForm.get('ngoFocusAreas')?.value.includes(area.value)"
+                        (click)="toggleFocusArea(area.value)">
+                        <mat-icon fontSet="material-symbols-rounded" style="font-size:18px">{{ area.icon }}</mat-icon>
+                        {{ area.label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label">Relevant SDG Goals</label>
+                  <div class="sdg-grid">
+                    @for (sdg of sdgOptions; track sdg.value) {
+                      <button type="button" class="sdg-chip"
+                        [class.selected]="roleForm.get('ngoSdgGoals')?.value.includes(sdg.value)"
+                        (click)="toggleSdg(sdg.value)">
+                        SDG {{ sdg.value }}: {{ sdg.label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <div class="row-2">
+                  <div class="field-group">
+                    <label class="field-label">Registration No.</label>
+                    <div class="input-wrapper">
+                      <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">app_registration</mat-icon></span>
+                      <input class="auth-input" formControlName="ngoRegistrationNumber" placeholder="e.g. E-12345">
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Operating Region</label>
+                    <div class="input-wrapper">
+                      <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">location_on</mat-icon></span>
+                      <select class="auth-input auth-select" formControlName="region">
+                        <option value="">Select region</option>
+                        <option value="Dharavi">Dharavi</option>
+                        <option value="Kurla">Kurla</option>
+                        <option value="Govandi">Govandi</option>
+                        <option value="Bhandup">Bhandup</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label">Registration Certificate</label>
+                  <div class="upload-zone" (click)="certInput.click()" [class.has-file]="ngoCertFile()">
+                    <input #certInput type="file" accept="image/*,application/pdf" hidden (change)="onCertFile($event)">
+                    @if (ngoCertFile()) {
+                      <mat-icon fontSet="material-symbols-rounded" class="upload-done-icon"
+                        style="font-variation-settings: 'FILL' 1, 'wght' 300;">check_circle</mat-icon>
+                      <span class="upload-name">{{ ngoCertFile()!.name }}</span>
+                      <span class="upload-change">Click to change</span>
+                    } @else {
+                      <mat-icon fontSet="material-symbols-rounded"
+                        style="font-variation-settings: 'FILL' 0, 'wght' 300;">description</mat-icon>
+                      <span class="upload-text">Upload Registration Certificate</span>
+                      <span class="upload-hint">PDF, JPG, PNG — max 10 MB</span>
+                    }
                   </div>
                 </div>
               }
@@ -377,6 +455,7 @@ export class RegisterComponent {
   private snackBar = inject(MatSnackBar);
   private firestoreService = inject(FirestoreService);
   private verificationService = inject(VerificationService);
+  private ngoRegistry = inject(NgoRegistryService);
 
   currentStep = signal(0);
   steps = ['Personal', 'Role & Skills', 'Verification'];
@@ -388,6 +467,7 @@ export class RegisterComponent {
   faceCaptured = signal(false);
   faceDataUrl = signal('');
   submitting = signal(false);
+  ngoCertFile = signal<File | null>(null);
 
   // Verification state
   ocrProcessing = signal(false);
@@ -402,7 +482,7 @@ export class RegisterComponent {
   roleOptions = [
     { value: 'volunteer', label: 'Volunteer', icon: 'handshake', desc: 'Help on ground' },
     { value: 'field_lead', label: 'Field Lead', icon: 'supervisor_account', desc: 'Coordinate teams' },
-    { value: 'ngo_admin', label: 'NGO Founder', icon: 'domain', desc: 'Register your NGO' }
+    { value: 'ngo_founder', label: 'NGO Founder', icon: 'domain', desc: 'Register your NGO' }
   ];
 
   personalForm: FormGroup;
@@ -426,24 +506,56 @@ export class RegisterComponent {
       ngoAffiliation: [''],
       ngoName: [''],
       ngoRegistrationNumber: [''],
-      ngoEmail: ['']
+      ngoEmail: [''],
+      ngoFocusAreas: [[]],
+      ngoSdgGoals: [[]],
+      ngoDescription: ['']
     });
 
     this.roleForm.get('preferredRole')?.valueChanges.subscribe(role => {
-      if (role === 'ngo_admin') {
+      if (role === 'ngo_founder' || role === 'ngo_admin') {
         this.roleForm.get('ngoName')?.setValidators([Validators.required]);
         this.roleForm.get('ngoEmail')?.setValidators([Validators.required, Validators.email]);
         this.roleForm.get('region')?.setValidators([Validators.required]);
+        this.roleForm.get('ngoFocusAreas')?.setValidators([Validators.required, Validators.minLength(1)]);
+        this.roleForm.get('ngoDescription')?.setValidators([Validators.required, Validators.minLength(20)]);
       } else {
         this.roleForm.get('ngoName')?.clearValidators();
         this.roleForm.get('ngoEmail')?.clearValidators();
         this.roleForm.get('region')?.clearValidators();
+        this.roleForm.get('ngoFocusAreas')?.clearValidators();
+        this.roleForm.get('ngoDescription')?.clearValidators();
       }
       this.roleForm.get('ngoName')?.updateValueAndValidity();
       this.roleForm.get('ngoEmail')?.updateValueAndValidity();
       this.roleForm.get('region')?.updateValueAndValidity();
+      this.roleForm.get('ngoFocusAreas')?.updateValueAndValidity();
+      this.roleForm.get('ngoDescription')?.updateValueAndValidity();
     });
   }
+
+  focusAreaOptions = [
+    { value: 'food', label: 'Food Security', icon: 'restaurant' },
+    { value: 'medical', label: 'Healthcare', icon: 'medical_services' },
+    { value: 'education', label: 'Education', icon: 'school' },
+    { value: 'shelter', label: 'Housing', icon: 'home' },
+    { value: 'water', label: 'Clean Water', icon: 'water_drop' },
+    { value: 'livelihood', label: 'Livelihood', icon: 'work' },
+    { value: 'disaster_relief', label: 'Disaster Relief', icon: 'emergency' }
+  ];
+
+  sdgOptions = [
+    { value: 1, label: 'No Poverty' },
+    { value: 2, label: 'Zero Hunger' },
+    { value: 3, label: 'Good Health' },
+    { value: 4, label: 'Quality Education' },
+    { value: 5, label: 'Gender Equality' },
+    { value: 6, label: 'Clean Water' },
+    { value: 13, label: 'Climate Action' }
+  ];
+
+  ngoLogoFile = signal<File | null>(null);
+  ngoLogoPreview = signal<string>('');
 
   formatAadhaar(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -482,6 +594,50 @@ export class RegisterComponent {
     } else {
       this.snackBar.open('File must be under 5 MB', 'OK', { duration: 3000 });
     }
+  }
+
+  onCertFile(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file && file.size <= 10 * 1024 * 1024) {
+      this.ngoCertFile.set(file);
+      this.snackBar.open('Certificate uploaded successfully', 'OK', { duration: 2000 });
+    } else if (file) {
+      this.snackBar.open('File must be under 10 MB', 'OK', { duration: 3000 });
+    }
+  }
+
+  async onLogoFile(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file && file.size <= 2 * 1024 * 1024) {
+      this.ngoLogoFile.set(file);
+      const reader = new FileReader();
+      reader.onload = () => this.ngoLogoPreview.set(reader.result as string);
+      reader.readAsDataURL(file);
+    } else if (file) {
+      this.snackBar.open('Logo must be under 2 MB', 'OK', { duration: 3000 });
+    }
+  }
+
+  toggleFocusArea(area: string) {
+    const current = this.roleForm.get('ngoFocusAreas')?.value as string[];
+    const index = current.indexOf(area);
+    if (index > -1) {
+      current.splice(index, 1);
+    } else {
+      current.push(area);
+    }
+    this.roleForm.get('ngoFocusAreas')?.setValue([...current]);
+  }
+
+  toggleSdg(goal: number) {
+    const current = this.roleForm.get('ngoSdgGoals')?.value as number[];
+    const index = current.indexOf(goal);
+    if (index > -1) {
+      current.splice(index, 1);
+    } else {
+      current.push(goal);
+    }
+    this.roleForm.get('ngoSdgGoals')?.setValue([...current]);
   }
 
   formatOcrAadhaar(num: string): string {
@@ -558,10 +714,17 @@ export class RegisterComponent {
   }
 
   canSubmit(): boolean {
-    return this.aadhaarNumber.replace(/\s/g, '').length === 12
+    const role = this.roleForm.get('preferredRole')?.value;
+    const commonValid = this.aadhaarNumber.replace(/\s/g, '').length === 12
       && !!this.aadhaarFile()
       && this.faceCaptured()
       && this.acceptedPrivacyPolicy();
+    
+    if (role === 'ngo_founder' || role === 'ngo_admin') {
+      return commonValid && !!this.ngoCertFile() && this.roleForm.valid;
+    }
+    
+    return commonValid;
   }
 
   async submitRegistration() {
@@ -600,6 +763,37 @@ export class RegisterComponent {
         isRegistered: true,
         registrationCompletedAt: new Date()
       });
+
+      // If NGO Founder, register the NGO entity
+      if ((r.preferredRole === 'ngo_founder' || r.preferredRole === 'ngo_admin') && this.ngoCertFile()) {
+        const ngoId = await this.ngoRegistry.registerNgo({
+          name: r.ngoName,
+          registrationNumber: r.ngoRegistrationNumber,
+          operatingRegions: [r.region],
+          primaryContact: {
+            name: p.displayName,
+            email: r.ngoEmail,
+            phone: p.phone,
+            designation: 'Founder'
+          },
+          address: {
+            line1: p.address,
+            city: 'Mumbai', // Default for pilot
+            state: 'Maharashtra',
+            pincode: ''
+          },
+          description: r.ngoDescription,
+          focusAreas: r.ngoFocusAreas,
+          sdgGoals: r.ngoSdgGoals,
+          foundedYear: new Date().getFullYear(),
+          tier: 'grassroots'
+        }, [
+          { file: this.ngoCertFile()!, type: 'registration_certificate' }
+        ], this.ngoLogoFile() || undefined);
+
+        // Save ngoId to user profile
+        await this.firestoreService.updateUserProfile(user.uid, { ngoId });
+      }
 
       this.snackBar.open('Registration submitted! Redirecting...', 'OK', { duration: 2000 });
       setTimeout(() => this.router.navigate(['/verification-status']), 1500);

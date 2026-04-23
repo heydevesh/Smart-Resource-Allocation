@@ -1,11 +1,16 @@
-module sahaay/functions
+module sahaay.io/functions
 
-go 1.25.0
+go 1.26.2
 
 require (
 	cloud.google.com/go/aiplatform v1.124.0
+	cloud.google.com/go/firestore v1.21.0
+	cloud.google.com/go/vertexai v0.19.0
+	cloud.google.com/go/vision v1.2.0
+	cloud.google.com/go/vision/v2 v2.9.6
 	firebase.google.com/go/v4 v4.19.0
 	github.com/GoogleCloudPlatform/functions-framework-go v1.9.2
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -14,8 +19,6 @@ require (
 	cloud.google.com/go/auth v0.18.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
-	cloud.google.com/go/dialogflow v1.80.0 // indirect
-	cloud.google.com/go/firestore v1.21.0 // indirect
 	cloud.google.com/go/iam v1.7.0 // indirect
 	cloud.google.com/go/longrunning v0.9.0 // indirect
 	cloud.google.com/go/monitoring v1.24.3 // indirect
@@ -35,10 +38,12 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.14 // indirect
 	github.com/googleapis/gax-go/v2 v2.21.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 // indirect
@@ -65,9 +70,9 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/api v0.274.0 // indirect
 	google.golang.org/appengine/v2 v2.0.6 // indirect
+	google.golang.org/genai v1.52.1 // indirect
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	google.golang.org/grpc v1.80.0 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 )

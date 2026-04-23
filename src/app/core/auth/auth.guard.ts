@@ -1,11 +1,17 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
-import { map } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
 export const authGuard = () => {
   const router = inject(Router);
   return inject(AuthService).currentUser$.pipe(
-    map(user => !!user || router.createUrlTree(['/auth']))
+    filter(user => user !== undefined),
+    map(user => {
+      if (!user) return router.createUrlTree(['/auth']);
+      // If user is authenticated but hasn't completed registration, redirect to register
+      if (!user.isRegistered) return router.createUrlTree(['/register']);
+      return true;
+    })
   );
 };

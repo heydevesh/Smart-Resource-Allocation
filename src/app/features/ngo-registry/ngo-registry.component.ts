@@ -2,19 +2,10 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { FirestoreService } from '../../core/firebase/firestore.service';
 import { toSignal } from '@angular/core/rxjs-interop';
-
-interface NGO {
-  id: string;
-  name: string;
-  ward: string;
-  expertise: string[];
-  contact: string;
-  capacity: number;
-  status: 'active' | 'pending' | 'inactive';
-  verified: boolean;
-}
+import { NgoRegistryService } from '../../core/ngo/ngo-registry.service';
+import { Ngo } from '../../models';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-ngo-registry',
@@ -28,10 +19,12 @@ interface NGO {
           <p class="directory-label">Directory</p>
           <h1 class="page-title">Partner Registry</h1>
         </div>
-        <button class="btn-primary">
-          <mat-icon>add</mat-icon>
-          New Registration
-        </button>
+        @if (auth.hasPermission('manage_registry')) {
+          <button class="btn-primary">
+            <mat-icon>add</mat-icon>
+            New Registration
+          </button>
+        }
       </div>
 
       <!-- Stats Cards -->
@@ -115,27 +108,29 @@ interface NGO {
       <!-- NGO Grid -->
       <div class="ngo-grid">
         @for (ngo of filteredNGOs(); track ngo.id) {
-          <div class="ngo-card" [class]="ngo.status">
-            <div class="card-indicator" [class]="ngo.status"></div>
+          <div class="ngo-card" [class.active]="ngo.status === 'active'" [class.pending]="ngo.status === 'pending_review'">
+            <div class="card-indicator" [class.active]="ngo.status === 'active'" [class.pending]="ngo.status === 'pending_review'"></div>
             <div class="card-header">
               <div class="ngo-info">
                 <div class="ngo-name-row">
                   <h3>{{ ngo.name }}</h3>
-                  @if (ngo.verified) {
+                  @if (ngo.status === 'active') {
                     <mat-icon class="verified-icon">verified</mat-icon>
                   }
                 </div>
                 <p class="ngo-ward">
                   <mat-icon>location_on</mat-icon>
-                  {{ ngo.ward }}
+                  {{ ngo.operatingRegions.join(', ') }}
                 </p>
               </div>
-              <span class="status-badge" [class]="ngo.status">{{ ngo.status }}</span>
+              <span class="status-badge" [class.active]="ngo.status === 'active'" [class.pending]="ngo.status === 'pending_review'">
+                {{ ngo.status.replace('_', ' ') }}
+              </span>
             </div>
 
             <div class="expertise-tags">
-              @for (tag of ngo.expertise; track tag) {
-                <span class="expertise-tag" [class]="ngo.status">{{ tag }}</span>
+              @for (tag of ngo.focusAreas; track tag) {
+                <span class="expertise-tag" [class.active]="ngo.status === 'active'">{{ tag }}</span>
               }
             </div>
 
@@ -144,14 +139,14 @@ interface NGO {
                 <p class="footer-label">Contact</p>
                 <p class="footer-value">
                   <mat-icon>person</mat-icon>
-                  {{ ngo.contact }}
+                  {{ ngo.primaryContact.name }}
                 </p>
               </div>
               <div class="footer-col">
-                <p class="footer-label">Capacity</p>
+                <p class="footer-label">Tier</p>
                 <p class="footer-value">
-                  <mat-icon>groups</mat-icon>
-                  {{ ngo.capacity }} Volunteers
+                  <mat-icon>military_tech</mat-icon>
+                  {{ ngo.tier | titlecase }}
                 </p>
               </div>
             </div>
@@ -605,73 +600,34 @@ interface NGO {
   `]
 })
 export class NgoRegistryComponent {
-  private firestore = inject(FirestoreService);
+  private ngoRegistry = inject(NgoRegistryService);
+  auth = inject(AuthService);
 
   searchQuery = signal<string>('');
   selectedWard = signal<string>('');
   selectedExpertise = signal<string>('');
 
-  ngos: NGO[] = [
-    {
-      id: '1',
-      name: 'Sanjivani Trust',
-      ward: 'Dharavi (Ward G/N)',
-      expertise: ['Medical Aid', 'Ambulance'],
-      contact: 'Dr. Meera Desai',
-      capacity: 45,
-      status: 'active',
-      verified: true
-    },
-    {
-      id: '2',
-      name: 'Aahar Foundation',
-      ward: 'Kurla (Ward L)',
-      expertise: ['Food Distribution', 'Logistics'],
-      contact: 'Rahul Sharma',
-      capacity: 120,
-      status: 'active',
-      verified: true
-    },
-    {
-      id: '3',
-      name: 'Jal Relief Squad',
-      ward: 'Andheri (Ward K/E)',
-      expertise: ['Flood Rescue'],
-      contact: 'Sarah Khan',
-      capacity: 30,
-      status: 'pending',
-      verified: false
-    },
-    {
-      id: '4',
-      name: 'Paws & Claws Rescue',
-      ward: 'Citywide',
-      expertise: ['Animal Rescue'],
-      contact: 'Amit Patel',
-      capacity: 15,
-      status: 'active',
-      verified: true
-    }
-  ];
+  ngos = toSignal(this.ngoRegistry.getActiveNgos(), { initialValue: [] as Ngo[] });
 
   filteredNGOs = computed(() => {
     const query = this.searchQuery().toLowerCase();
     const ward = this.selectedWard();
     const expertise = this.selectedExpertise();
+    const allNgos = this.ngos();
 
-    return this.ngos.filter(ngo => {
+    return allNgos.filter((ngo: Ngo) => {
       const matchesSearch = ngo.name.toLowerCase().includes(query) ||
-                           ngo.contact.toLowerCase().includes(query);
-      const matchesWard = !ward || ward === 'all' || ngo.ward.includes(ward);
+                           ngo.primaryContact.name.toLowerCase().includes(query);
+      const matchesWard = !ward || ward === 'all' || ngo.operatingRegions.some((r: string) => r.includes(ward));
       const matchesExpertise = !expertise || expertise === 'all' ||
-                               ngo.expertise.some(e => e.toLowerCase().includes(expertise.toLowerCase()));
+                               ngo.focusAreas.some((e: string) => e.toLowerCase().includes(expertise.toLowerCase()));
       return matchesSearch && matchesWard && matchesExpertise;
     });
   });
 
-  totalVerified = computed(() => this.ngos.filter(n => n.verified).length);
-  activeCount = computed(() => this.ngos.filter(n => n.status === 'active').length);
-  pendingCount = computed(() => this.ngos.filter(n => n.status === 'pending').length);
+  totalVerified = computed(() => this.ngos().filter((n: Ngo) => n.status === 'active').length);
+  activeCount = computed(() => this.ngos().filter((n: Ngo) => n.status === 'active').length);
+  pendingCount = computed(() => this.ngos().filter((n: Ngo) => n.status === 'pending_review').length);
 
   onSearch(event: Event) {
     const input = event.target as HTMLInputElement;

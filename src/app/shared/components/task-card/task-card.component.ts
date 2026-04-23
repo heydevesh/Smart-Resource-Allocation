@@ -288,7 +288,12 @@ export class TaskCardComponent {
   isOverdue(): boolean {
     const task = this.task();
     if (task.status === 'completed') return false;
-    return task.dueAt.toDate() < new Date();
+    if (!task.dueAt) return false;
+    // Handle both Firestore Timestamp and plain Date
+    const dueDate = typeof task.dueAt.toDate === 'function'
+      ? task.dueAt.toDate()
+      : new Date(task.dueAt as any);
+    return dueDate < new Date();
   }
 
   getStatusColor(): string {

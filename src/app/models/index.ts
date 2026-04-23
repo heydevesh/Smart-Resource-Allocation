@@ -4,3 +4,6 @@ export * from './volunteer.model';
 export * from './user.model';
 export * from './ai-match.model';
 export * from './activity.model';
+export * from './inventory.model';
+export * from './ngo.model';
+export * from './notification-preferences.model';

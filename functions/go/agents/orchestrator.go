@@ -10,8 +10,9 @@ import (
 	aiplatform "cloud.google.com/go/aiplatform/apiv1beta1"
 	"cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
-	"sahaay/functions/config"
-	"sahaay/functions/middleware"
+	"google.golang.org/protobuf/types/known/structpb"
+	"sahaay.io/functions/config"
+	"sahaay.io/functions/middleware"
 )
 
 func init() {
@@ -68,23 +69,26 @@ func CallAgent(w http.ResponseWriter, r *http.Request) {
 
 	agentID := agentForIntent(req.Intent)
 	ctx := context.Background()
-	client, err := aiplatform.NewAgentClient(ctx)
+	client, err := aiplatform.NewReasoningEngineExecutionClient(ctx)
 	if err != nil {
-		log.Printf("[ERROR] Failed to create Agent client: %v", err)
+		log.Printf("[ERROR] Failed to create Reasoning Engine client: %v", err)
 		http.Error(w, "Internal AI service error", http.StatusInternalServerError)
 		return
 	}
 	defer client.Close()
 
-	payloadBytes, _ := json.Marshal(req.Payload)
-	resp, err := client.QueryAgent(ctx, &aiplatformpb.QueryAgentRequest{
-		Name:    agentID,
-		Session: req.SessionID,
-		Query: &aiplatformpb.Query{
-			Content: &aiplatformpb.Query_Text{
-				Text: string(payloadBytes),
-			},
-		},
+	// Convert payload to structpb.Struct
+	input := &structpb.Struct{
+		Fields: make(map[string]*structpb.Value),
+	}
+	for k, v := range req.Payload {
+		val, _ := structpb.NewValue(v)
+		input.Fields[k] = val
+	}
+
+	resp, err := client.QueryReasoningEngine(ctx, &aiplatformpb.QueryReasoningEngineRequest{
+		Name:  agentID,
+		Input: input,
 	})
 	if err != nil {
 		log.Printf("[ERROR] Agent query failed: intent=%s error=%v", req.Intent, err)
@@ -97,7 +101,7 @@ func CallAgent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(AgentResponse{
-		Result:    resp.GetAnswer(),
+		Result:    resp.GetOutput(),
 		AgentUsed: req.Intent,
 		Latency:   latency,
 	})

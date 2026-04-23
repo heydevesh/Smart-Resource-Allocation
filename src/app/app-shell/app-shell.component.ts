@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -6,10 +6,14 @@ import { ReportNeedComponent } from '../modals/report-need/report-need.component
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatSidenavModule } from '@angular/material/sidenav';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../core/auth/auth.service';
 import { SearchService } from '../core/ui/search.service';
+import { FcmService } from '../core/firebase/fcm.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { AiChatComponent } from '../shared/components/ai-chat/ai-chat.component';
+import { OfflineBannerComponent } from '../shared/components/offline-banner/offline-banner.component';
 
 @Component({
   selector: 'app-app-shell',
@@ -24,141 +28,206 @@ import { toSignal } from '@angular/core/rxjs-interop';
     MatToolbarModule,
     MatMenuModule,
     MatDialogModule,
-    MatMenuModule
+    MatMenuModule,
+    MatSidenavModule,
+    AiChatComponent,
+    OfflineBannerComponent
   ],
   template: `
-    <div class="shell-wrapper">
-      <!-- Side Navigation -->
-      <nav class="sidebar">
-        <div class="sidebar-header">
-          <h1 class="logo">Sahaay</h1>
-          <p class="ward-label">MUMBAI WARD - 4</p>
-        </div>
+    <app-offline-banner></app-offline-banner>
+    <mat-sidenav-container class="shell-wrapper">
+      <mat-sidenav #chatSidenav mode="over" position="end" class="chat-sidenav">
+        <app-ai-chat></app-ai-chat>
+      </mat-sidenav>
 
-        <ul class="nav-list">
-          <li>
-            <a routerLink="/home" routerLinkActive="active" class="nav-link">
-              <mat-icon fontSet="material-symbols-rounded">space_dashboard</mat-icon>
-              <span>Command Center</span>
+      <mat-sidenav-content class="shell-content">
+        <!-- Side Navigation -->
+        <nav class="sidebar">
+          <div class="sidebar-header">
+            <h1 class="logo">Sahaay</h1>
+            <p class="ward-label">MUMBAI WARD - 4</p>
+          </div>
+
+          <ul class="nav-list">
+            @if (auth.hasPermission('view_home')) {
+              <li>
+                <a routerLink="/home" routerLinkActive="active" class="nav-link">
+                  <mat-icon fontSet="material-symbols-rounded">space_dashboard</mat-icon>
+                  <span>Command Center</span>
+                </a>
+              </li>
+            }
+            @if (auth.hasPermission('view_map')) {
+              <li>
+                <a routerLink="/needs-map" routerLinkActive="active" class="nav-link">
+                  <mat-icon fontSet="material-symbols-rounded">map</mat-icon>
+                  <span>Crisis Map</span>
+                </a>
+              </li>
+            }
+            @if (auth.hasPermission('view_tasks')) {
+              <li>
+                <a routerLink="/tasks" routerLinkActive="active" class="nav-link">
+                  <mat-icon fontSet="material-symbols-rounded">task</mat-icon>
+                  <span>Task Force</span>
+                </a>
+              </li>
+            }
+            @if (auth.hasPermission('view_all_volunteers') || auth.hasPermission('view_team_profiles')) {
+              <li>
+                <a routerLink="/volunteers" routerLinkActive="active" class="nav-link">
+                  <mat-icon fontSet="material-symbols-rounded">group</mat-icon>
+                  <span>Volunteers</span>
+                </a>
+              </li>
+            }
+            @if (auth.hasPermission('view_registry')) {
+              <li>
+                <a routerLink="/ngo-registry" routerLinkActive="active" class="nav-link">
+                  <mat-icon fontSet="material-symbols-rounded">volunteer_activism</mat-icon>
+                  <span>NGO Registry</span>
+                </a>
+              </li>
+            }
+            @if (auth.hasPermission('view_inventory')) {
+              <li>
+                <a routerLink="/resource-vault" routerLinkActive="active" class="nav-link">
+                  <mat-icon fontSet="material-symbols-rounded">inventory_2</mat-icon>
+                  <span>Resource Vault</span>
+                </a>
+              </li>
+            }
+            @if (auth.hasPermission('view_insights_own') || auth.hasPermission('view_insights_team') || auth.hasPermission('view_insights_ngo')) {
+              <li>
+                <a routerLink="/insights" routerLinkActive="active" class="nav-link">
+                  <mat-icon fontSet="material-symbols-rounded">insights</mat-icon>
+                  <span>Insights</span>
+                </a>
+              </li>
+            }
+            @if (auth.hasPermission('view_application_status')) {
+              <li>
+                <a routerLink="/verification-status" routerLinkActive="active" class="nav-link">
+                  <mat-icon fontSet="material-symbols-rounded">verified_user</mat-icon>
+                  <span>Status</span>
+                </a>
+              </li>
+            }
+            <li>
+              <a routerLink="/settings" routerLinkActive="active" class="nav-link">
+                <mat-icon fontSet="material-symbols-rounded">settings</mat-icon>
+                <span>Settings</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="sidebar-footer">
+            @if (auth.hasPermission('create_need')) {
+              <button mat-flat-button class="urgent-report-btn" (click)="openReportNeed()">
+                <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">add_alert</mat-icon>
+                Urgent Report
+              </button>
+            }
+            <a class="help-link">
+              <mat-icon fontSet="material-symbols-rounded">help_outline</mat-icon>
+              <span>Help Center</span>
             </a>
-          </li>
-          <li>
-            <a routerLink="/needs-map" routerLinkActive="active" class="nav-link">
-              <mat-icon fontSet="material-symbols-rounded">map</mat-icon>
-              <span>Crisis Map</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/tasks" routerLinkActive="active" class="nav-link">
-              <mat-icon fontSet="material-symbols-rounded">task</mat-icon>
-              <span>Task Force</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/ngo-registry" routerLinkActive="active" class="nav-link">
-              <mat-icon fontSet="material-symbols-rounded">volunteer_activism</mat-icon>
-              <span>NGO Registry</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/resource-vault" routerLinkActive="active" class="nav-link">
-              <mat-icon fontSet="material-symbols-rounded">inventory_2</mat-icon>
-              <span>Resource Vault</span>
-            </a>
-          </li>
-          <li>
-            <a routerLink="/settings" routerLinkActive="active" class="nav-link">
+            <div class="org-logo-section">
+              <div class="org-avatar">OL</div>
+              <div>
+                <p class="org-name">Organization Logo</p>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <!-- Main Content Container -->
+        <div class="main-container">
+          <!-- Top App Bar (Visible on all screens) -->
+          <header class="top-bar">
+            <div class="search-bar">
+              <mat-icon>search</mat-icon>
+              <input 
+                type="text" 
+                placeholder="Search across Dharavi grid..."
+                [value]="searchService.searchTerm()"
+                (input)="onSearch($event)">
+            </div>
+            
+            <div class="top-actions">
+              <button mat-icon-button class="action-btn">
+                <mat-icon>notifications</mat-icon>
+                <span class="notification-badge"></span>
+              </button>
+              <button mat-icon-button class="action-btn" (click)="chatSidenav.toggle()">
+                <mat-icon class="ai-spark">colors_spark</mat-icon>
+              </button>
+              <div class="profile-avatar">
+                <img [src]="user()?.photoURL || 'https://i.pravatar.cc/150?u=sahaay'" alt="Profile">
+              </div>
+            </div>
+          </header>
+
+          <!-- Dynamic Page Content -->
+          <main class="page-content">
+            <router-outlet></router-outlet>
+          </main>
+
+
+          <!-- Mobile Bottom Nav -->
+          <div class="bottom-nav hidden-desktop">
+            @if (auth.hasPermission('view_home')) {
+              <a routerLink="/home" routerLinkActive="active" class="bottom-nav-item">
+                <mat-icon fontSet="material-symbols-rounded">space_dashboard</mat-icon>
+                <span>Home</span>
+              </a>
+            }
+            @if (auth.hasPermission('view_map')) {
+              <a routerLink="/needs-map" routerLinkActive="active" class="bottom-nav-item">
+                <mat-icon fontSet="material-symbols-rounded">map</mat-icon>
+                <span>Map</span>
+              </a>
+            }
+            @if (auth.hasPermission('view_tasks')) {
+              <a routerLink="/tasks" routerLinkActive="active" class="bottom-nav-item">
+                <mat-icon fontSet="material-symbols-rounded">task</mat-icon>
+                <span>Tasks</span>
+              </a>
+            }
+            @if (auth.hasPermission('view_inventory')) {
+              <a routerLink="/resource-vault" routerLinkActive="active" class="bottom-nav-item">
+                <mat-icon fontSet="material-symbols-rounded">inventory_2</mat-icon>
+                <span>Vault</span>
+              </a>
+            }
+            <a routerLink="/settings" routerLinkActive="active" class="bottom-nav-item">
               <mat-icon fontSet="material-symbols-rounded">settings</mat-icon>
               <span>Settings</span>
             </a>
-          </li>
-        </ul>
-
-        <div class="sidebar-footer">
-          <button mat-flat-button class="urgent-report-btn" (click)="openReportNeed()">
-            <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">add_alert</mat-icon>
-            Urgent Report
-          </button>
-          <a class="help-link">
-            <mat-icon fontSet="material-symbols-rounded">help_outline</mat-icon>
-            <span>Help Center</span>
-          </a>
-          <div class="org-logo-section">
-            <div class="org-avatar">OL</div>
-            <div>
-              <p class="org-name">Organization Logo</p>
-            </div>
           </div>
         </div>
-      </nav>
-
-      <!-- Main Content Container -->
-      <div class="main-container">
-        <!-- Top App Bar (Visible on all screens) -->
-        <header class="top-bar">
-          <div class="search-bar">
-            <mat-icon>search</mat-icon>
-            <input 
-              type="text" 
-              placeholder="Search across Dharavi grid..."
-              [value]="searchService.searchTerm()"
-              (input)="onSearch($event)">
-          </div>
-          
-          <div class="top-actions">
-            <button mat-icon-button class="action-btn">
-              <mat-icon>notifications</mat-icon>
-              <span class="notification-badge"></span>
-            </button>
-            <button mat-icon-button class="action-btn">
-              <mat-icon class="ai-spark">colors_spark</mat-icon>
-            </button>
-            <div class="profile-avatar">
-              <img [src]="user()?.photoURL || 'https://i.pravatar.cc/150?u=sahaay'" alt="Profile">
-            </div>
-          </div>
-        </header>
-
-        <!-- Dynamic Page Content -->
-        <main class="page-content">
-          <router-outlet></router-outlet>
-        </main>
-
-
-        <!-- Mobile Bottom Nav -->
-        <div class="bottom-nav hidden-desktop">
-          <a routerLink="/home" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon fontSet="material-symbols-rounded">space_dashboard</mat-icon>
-            <span>Home</span>
-          </a>
-          <a routerLink="/needs-map" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon fontSet="material-symbols-rounded">map</mat-icon>
-            <span>Map</span>
-          </a>
-          <a routerLink="/tasks" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon fontSet="material-symbols-rounded">task</mat-icon>
-            <span>Tasks</span>
-          </a>
-          <a routerLink="/resource-vault" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon fontSet="material-symbols-rounded">inventory_2</mat-icon>
-            <span>Vault</span>
-          </a>
-          <a routerLink="/settings" routerLinkActive="active" class="bottom-nav-item">
-            <mat-icon fontSet="material-symbols-rounded">settings</mat-icon>
-            <span>Settings</span>
-          </a>
-        </div>
-      </div>
-    </div>
+      </mat-sidenav-content>
+    </mat-sidenav-container>
   `,
   styles: [`
     .shell-wrapper {
-      display: flex;
       height: 100vh;
       width: 100vw;
-      overflow: hidden;
       background-color: var(--color-surface);
     }
+    
+    .chat-sidenav {
+      width: 400px;
+      max-width: 100vw;
+      border-left: 1px solid var(--color-border);
+    }
+
+    .shell-content {
+      display: flex;
+      height: 100%;
+      overflow: hidden;
+    }
+
 
     /* Sidebar Styles */
     .sidebar {
@@ -227,7 +296,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
     }
 
     .nav-link:hover {
-      background-color: white;
+      background-color: var(--color-card);
       color: var(--color-primary, #005147);
     }
 
@@ -291,7 +360,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
       transition: all 0.2s ease;
 
       &:hover {
-        background: white;
+        background: var(--color-card);
         color: var(--color-primary, #005147);
       }
 
@@ -304,7 +373,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
       gap: 12px;
       padding: 12px;
       border-radius: 10px;
-      background: white;
+      background: var(--color-card);
       box-shadow: 0 2px 8px rgba(0, 81, 71, 0.06);
 
       .org-avatar {
@@ -364,7 +433,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
     }
 
     .search-bar:focus-within {
-      background-color: white;
+      background-color: var(--color-card);
       border-color: var(--color-primary-mid);
       box-shadow: 0 0 0 4px var(--color-primary-light);
     }
@@ -402,7 +471,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
       height: 8px;
       background-color: var(--color-danger);
       border-radius: 50%;
-      border: 2px solid white;
+      border: 2px solid var(--color-card);
     }
 
     .ai-spark {
@@ -498,10 +567,15 @@ import { toSignal } from '@angular/core/rxjs-interop';
   `]
 })
 export class AppShellComponent {
-  private auth = inject(AuthService);
+  protected auth = inject(AuthService);
   private dialog = inject(MatDialog);
   protected searchService = inject(SearchService);
+  private fcm = inject(FcmService);
   user = toSignal(this.auth.currentUser$);
+
+  constructor() {
+    this.fcm.init();
+  }
 
   onSearch(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -510,8 +584,10 @@ export class AppShellComponent {
 
   openReportNeed() {
     this.dialog.open(ReportNeedComponent, {
-      width: '500px',
-      disableClose: true
+      width: '650px',
+      maxWidth: '90vw',
+      disableClose: true,
+      panelClass: 'glass-dialog'
     });
   }
 }

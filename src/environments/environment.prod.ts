@@ -15,9 +15,12 @@ export const environment = {
   // ── Firebase Cloud Messaging ─────────────────────────────────
   // Obtain from: Firebase Console → Project Settings → Cloud Messaging
   //              → Web Push certificates → Key pair → Copy
-  vapidKey: 'REPLACE_WITH_VAPID_KEY_FROM_FIREBASE_CONSOLE',
+  vapidKey: 'BMOzRqdJ5T4w2JcoDmjrP4juRu14WG6IyH4Qdg0KMuxQ-1KNJYZMLpeAnFcS8W2becXp8aeDOMcn5Co_26NhGeQ',
 
   // ── Vertex AI / Cloud Functions ──────────────────────────────
-  functionsRegion: 'asia-south1',
+  functionsRegion: 'us-west1',
   vertexAiProject: 'sahaay-18eb3',
+
+  // ── Firebase App Check (reCAPTCHA v3) ────────────────────────
+  recaptchaSiteKey: 'REPLACE_WITH_RECAPTCHA_V3_SITE_KEY',
 };

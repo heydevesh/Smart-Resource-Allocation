@@ -16,4 +16,5 @@ export interface Volunteer {
   badges: string[];
   active: boolean;
   lastActive?: Timestamp;
+  region?: string;
 }

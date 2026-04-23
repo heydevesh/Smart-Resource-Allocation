@@ -1,4 +1,4 @@
-import { Component, signal, inject, computed } from '@angular/core';
+import { Component, signal, inject, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,17 +7,21 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { CreateTaskComponent } from '../../modals/create-task/create-task.component';
 import { TaskDetailComponent } from '../../modals/task-detail/task-detail.component';
 import { TaskCardComponent } from '../../shared/components/task-card/task-card.component';
+import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader/skeleton-loader.component';
 import { Task } from '../../models';
 import { FirestoreService } from '../../core/firebase/firestore.service';
 import { SearchService } from '../../core/ui/search.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../core/auth/auth.service';
+import { GeolocationService } from '../../core/maps/geolocation.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenuModule, MatDialogModule, MatDividerModule, TaskCardComponent],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatMenuModule, MatDialogModule, MatDividerModule, TaskCardComponent, SkeletonLoaderComponent],
   template: `
     <div class="board-wrapper">
       <div class="board-controls">
@@ -74,7 +78,7 @@ import { MatDividerModule } from '@angular/material/divider';
             <button mat-menu-item (click)="clearFilters()">Clear All Filters</button>
           </mat-menu>
 
-          <button mat-flat-button color="primary" class="deploy-btn" (click)="openCreateTask()">
+          <button *ngIf="auth.hasPermission('create_task')" mat-flat-button color="primary" class="deploy-btn" (click)="openCreateTask()">
             <mat-icon>assignment_add</mat-icon>
             Deploy Operation
           </button>
@@ -89,8 +93,12 @@ import { MatDividerModule } from '@angular/material/divider';
             <button mat-icon-button class="more-btn"><mat-icon>more_vert</mat-icon></button>
           </div>
           <div class="lane-content">
-            <app-task-card *ngFor="let task of getTasksByStatus('pending')" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
-            <div class="empty-lane" *ngIf="getCount('pending') === 0">No open tasks</div>
+            @if (isLoading()) {
+              <app-skeleton-loader variant="task-card" [count]="2"></app-skeleton-loader>
+            } @else {
+              <app-task-card *ngFor="let task of getTasksByStatus('pending')" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
+              <div class="empty-lane" *ngIf="getCount('pending') === 0">No open tasks</div>
+            }
           </div>
         </div>
 
@@ -98,11 +106,21 @@ import { MatDividerModule } from '@angular/material/divider';
         <div class="lane">
           <div class="lane-header">
             <h3 class="lane-title">Assigned <span class="count">{{ getCount('active', 0) }}</span></h3>
-            <button mat-icon-button class="more-btn"><mat-icon>more_vert</mat-icon></button>
+            <button mat-icon-button class="more-btn" [matMenuTriggerFor]="assignedMenu"><mat-icon>more_vert</mat-icon></button>
+            <mat-menu #assignedMenu="matMenu">
+              <button mat-menu-item (click)="optimizeAssignedRoute()" [disabled]="isOptimizingRoute() || getCount('active', 0) < 2">
+                <mat-icon [class.spin]="isOptimizingRoute()">route</mat-icon>
+                <span>Optimize Route</span>
+              </button>
+            </mat-menu>
           </div>
           <div class="lane-content">
-            <app-task-card *ngFor="let task of getTasksByStatus('active', 0)" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
-            <div class="empty-lane" *ngIf="getCount('active', 0) === 0">No assigned tasks</div>
+            @if (isLoading()) {
+              <app-skeleton-loader variant="task-card" [count]="2"></app-skeleton-loader>
+            } @else {
+              <app-task-card *ngFor="let task of getTasksByStatus('active', 0)" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
+              <div class="empty-lane" *ngIf="getCount('active', 0) === 0">No assigned tasks</div>
+            }
           </div>
         </div>
 
@@ -124,8 +142,12 @@ import { MatDividerModule } from '@angular/material/divider';
               <button class="insight-action">Review Suggestion</button>
             </div>
 
-            <app-task-card *ngFor="let task of getTasksByStatus('active', 1)" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
-            <div class="empty-lane" *ngIf="getCount('active', 1) === 0 && !hasInsight()">No tasks in progress</div>
+            @if (isLoading()) {
+              <app-skeleton-loader variant="task-card" [count]="1"></app-skeleton-loader>
+            } @else {
+              <app-task-card *ngFor="let task of getTasksByStatus('active', 1)" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
+              <div class="empty-lane" *ngIf="getCount('active', 1) === 0 && !hasInsight()">No tasks in progress</div>
+            }
           </div>
         </div>
 
@@ -136,8 +158,12 @@ import { MatDividerModule } from '@angular/material/divider';
             <button mat-icon-button class="more-btn"><mat-icon>more_vert</mat-icon></button>
           </div>
           <div class="lane-content">
-            <app-task-card *ngFor="let task of getTasksByStatus('completed')" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
-            <div class="empty-lane" *ngIf="getCount('completed') === 0">No resolved tasks</div>
+            @if (isLoading()) {
+              <app-skeleton-loader variant="task-card" [count]="1"></app-skeleton-loader>
+            } @else {
+              <app-task-card *ngFor="let task of getTasksByStatus('completed')" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
+              <div class="empty-lane" *ngIf="getCount('completed') === 0">No resolved tasks</div>
+            }
           </div>
         </div>
       </div>
@@ -193,7 +219,7 @@ import { MatDividerModule } from '@angular/material/divider';
       border-radius: 9px;
       font-size: 13px;
       border-color: rgba(0,0,0,0.1);
-      background: white;
+      background: var(--color-card);
     }
 
     .kanban-board {
@@ -363,7 +389,7 @@ import { MatDividerModule } from '@angular/material/divider';
 
     .chip-row button {
       border: 1px solid var(--color-border);
-      background: white;
+      background: var(--color-card);
       padding: 4px 12px;
       border-radius: 20px;
       font-size: 12px;
@@ -390,14 +416,29 @@ import { MatDividerModule } from '@angular/material/divider';
       font-weight: 600;
       padding: 0 16px;
     }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
   `]
 })
-export class TasksComponent {
+export class TasksComponent implements OnInit {
   private firestore = inject(FirestoreService);
   private searchService = inject(SearchService);
   private dialog = inject(MatDialog);
+  private geo = inject(GeolocationService);
+  private snackBar = inject(MatSnackBar);
+  auth = inject(AuthService);
   
   tasks = toSignal(this.firestore.getAllTasks(), { initialValue: [] });
+  isLoading = signal<boolean>(true);
+  isOptimizingRoute = signal<boolean>(false);
+  optimizedTaskOrder = signal<string[]>([]);
+
+  ngOnInit() {
+    setTimeout(() => this.isLoading.set(false), 2000);
+  }
   searchTerm = this.searchService.searchTerm;
   categoryFilter = signal<string | null>(null);
   priorityFilter = signal<string | null>(null);
@@ -448,13 +489,26 @@ export class TasksComponent {
   }
 
   getTasksByStatus(status: 'pending' | 'active' | 'completed', progressType?: 0 | 1) {
-    return this.filteredTasks().filter(t => {
+    let tasksList = this.filteredTasks().filter(t => {
       if (t.status !== status) return false;
       if (status === 'active' && progressType !== undefined) {
         return progressType === 0 ? (t.progress === 0) : (t.progress > 0);
       }
       return true;
     });
+
+    if (status === 'active' && progressType === 0 && this.optimizedTaskOrder().length > 0) {
+      const order = this.optimizedTaskOrder();
+      tasksList.sort((a, b) => {
+        const idxA = order.indexOf(a.id);
+        const idxB = order.indexOf(b.id);
+        if (idxA === -1 && idxB === -1) return 0;
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      });
+    }
+    return tasksList;
   }
 
   getCount(status: 'pending' | 'active' | 'completed', progressType?: 0 | 1) {
@@ -477,5 +531,57 @@ export class TasksComponent {
       width: '500px',
       disableClose: true
     });
+  }
+
+  async optimizeAssignedRoute() {
+    if (!window.google) {
+      this.snackBar.open('Google Maps API not loaded.', 'OK', { duration: 3000 });
+      return;
+    }
+    
+    // Get unstarted assigned tasks without sorting by optimized order
+    let unstartedActiveTasks = this.filteredTasks().filter(t => t.status === 'active' && t.progress === 0);
+    
+    if (unstartedActiveTasks.length < 2) {
+      this.snackBar.open('Not enough assigned tasks to optimize.', 'OK', { duration: 3000 });
+      return;
+    }
+
+    this.isOptimizingRoute.set(true);
+    this.snackBar.open('Optimizing route with Google Maps...', '', { duration: 2000 });
+
+    try {
+      const currentLoc = await this.geo.getCurrentPosition();
+      const directionsService = new google.maps.DirectionsService();
+      
+      const origin = new google.maps.LatLng(currentLoc.lat, currentLoc.lng);
+      
+      const allWaypoints = unstartedActiveTasks.map(t => ({
+        location: new google.maps.LatLng(t.locationLat, t.locationLng),
+        stopover: true
+      }));
+
+      directionsService.route({
+        origin: origin,
+        destination: origin,
+        waypoints: allWaypoints,
+        optimizeWaypoints: true,
+        travelMode: google.maps.TravelMode.DRIVING
+      }, (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK && result) {
+          const order = result.routes[0].waypoint_order;
+          const optimizedIds = order.map((idx: number) => unstartedActiveTasks[idx].id);
+          this.optimizedTaskOrder.set(optimizedIds);
+          this.snackBar.open('Route optimized successfully!', 'Dismiss', { duration: 3000 });
+        } else {
+          this.snackBar.open('Failed to optimize route.', 'OK', { duration: 3000 });
+        }
+        this.isOptimizingRoute.set(false);
+      });
+    } catch (e) {
+      console.error(e);
+      this.snackBar.open('Error getting current location.', 'OK', { duration: 3000 });
+      this.isOptimizingRoute.set(false);
+    }
   }
 }

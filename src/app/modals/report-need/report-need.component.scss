@@ -1,11 +1,11 @@
 .modal-container {
-  max-width: 500px;
+  width: 100%;
   overflow: hidden;
   border-radius: var(--radius-card);
   background: var(--color-surface);
   color: var(--color-text-primary);
   display: flex;
-  flex-col: column;
+  flex-direction: column;
 }
 
 .glass-panel {
@@ -15,7 +15,7 @@
 }
 
 .modal-header {
-  padding: 24px;
+  padding: 32px 32px 24px 32px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -33,7 +33,7 @@
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
 
       mat-icon {
         font-size: 14px;
@@ -58,12 +58,18 @@
 }
 
 .modal-body {
-  padding: 24px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
   max-height: 70vh;
   overflow-y: auto;
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
 
   label {
     display: block;
@@ -72,7 +78,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--color-text-secondary);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 }
 
@@ -97,18 +103,18 @@ mat-button-toggle-group {
 
     ::ng-deep .mat-button-toggle-label-content {
       line-height: normal;
-      padding: 12px 8px;
+      padding: 16px 8px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
       font-size: 11px;
       font-weight: 600;
 
       mat-icon {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
       }
     }
   }
@@ -128,7 +134,7 @@ mat-button-toggle-group {
 .form-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .full-width {
@@ -253,25 +259,26 @@ mat-button-toggle-group {
 }
 
 .modal-footer {
-  padding: 16px 24px 24px;
+  padding: 24px 32px 32px;
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 16px;
   border-top: 1px solid var(--color-border);
 
   button[mat-flat-button] {
     border-radius: var(--radius-button);
-    padding: 0 24px;
-    height: 44px;
+    padding: 0 32px;
+    height: 48px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     background: var(--color-primary);
+    color: white;
     
     mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
   }
 }
@@ -283,6 +290,18 @@ mat-button-toggle-group {
 @keyframes rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-red {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+.pulse-active {
+  animation: pulse-red 2s infinite;
+  background: var(--color-danger-light) !important;
+  color: var(--color-danger) !important;
 }
 
 ::ng-deep .success-snackbar {

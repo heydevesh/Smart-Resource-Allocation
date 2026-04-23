@@ -13,7 +13,14 @@
       "Bash(curl -X POST http://localhost:4200)",
       "Bash(curl http://localhost:4200)",
       "Bash(dir /s /b src)",
-      "Bash(git restore *)"
+      "Bash(git restore *)",
+      "Bash(npm audit *)",
+      "Bash(go test *)",
+      "Bash(go install *)",
+      "Bash(govulncheck ./...)",
+      "Bash(grep -E '\\\\.\\(tmp|log|bak|cache|pyc\\)$|node_modules|\\\\.vscode|\\\\.idea|go\\\\.sum|dist/')",
+      "Bash(npx tsc *)",
+      "Bash(go build *)"
     ]
   }
 }

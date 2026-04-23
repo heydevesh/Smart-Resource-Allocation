@@ -98,11 +98,63 @@
   --color-text-primary: #ffffff;
   --color-text-secondary: #b3b3b3;
   --color-text-hint: #808080;
+  
   --color-primary-light: #1a2a27;
   --color-warning-light: #2a241a;
   --color-danger-light: #2a1a1a;
   --color-success-light: #1a2a1a;
   --color-info-light: #1a1e2a;
+
+  --color-surface-container: #1e1e1e;
+  --color-surface-container-low: #1a1a1a;
+  --color-surface-container-lowest: #121212;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #333333;
+  --color-surface-bright: #242424;
+  --color-surface-dim: #0a0a0a;
+
+  --color-on-surface: #ffffff;
+  --color-on-surface-variant: #b3b3b3;
+  --color-inverse-surface: #f1f1f0;
+  --color-inverse-on-surface: #121212;
+
+  --color-background: #121212;
+  --color-outline: #808080;
+  --color-outline-variant: #333333;
+
+  /* Material MDC overrides */
+  --mdc-theme-surface: var(--color-card);
+  --mdc-theme-on-surface: var(--color-text-primary);
+  --mdc-dialog-container-color: var(--color-card);
+  --mdc-dialog-subhead-color: var(--color-text-primary);
+  --mdc-dialog-supporting-text-color: var(--color-text-secondary);
+  
+  /* Text Fields & Inputs */
+  --mdc-filled-text-field-container-color: var(--color-surface-container);
+  --mdc-filled-text-field-input-text-color: var(--color-text-primary);
+  --mdc-filled-text-field-label-text-color: var(--color-text-secondary);
+  --mdc-filled-text-field-hover-label-text-color: var(--color-text-primary);
+  
+  --mdc-outlined-text-field-input-text-color: var(--color-text-primary);
+  --mdc-outlined-text-field-label-text-color: var(--color-text-secondary);
+  --mdc-outlined-text-field-outline-color: var(--color-border);
+  --mdc-outlined-text-field-hover-outline-color: var(--color-text-hint);
+
+  /* Menus and Selects */
+  --mat-menu-container-color: var(--color-card);
+  --mat-menu-item-label-text-color: var(--color-text-primary);
+  --mat-menu-item-hover-state-layer-color: rgba(255, 255, 255, 0.05);
+
+  --mat-select-panel-background-color: var(--color-card);
+  --mat-select-value-text-color: var(--color-text-primary);
+  --mat-option-label-text-color: var(--color-text-primary);
+  --mat-option-hover-state-layer-color: rgba(255, 255, 255, 0.05);
+
+  /* Buttons */
+  --mdc-filled-button-container-color: var(--color-primary);
+  --mdc-filled-button-label-text-color: var(--color-on-primary);
+
+  color-scheme: dark;
 }
 
 body {
@@ -156,5 +208,27 @@ h1, h2, h3, h4, h5, h6 {
 .info-snackbar {
   --mdc-snackbar-container-color: var(--color-info);
   --mdc-snackbar-supporting-text-color: #ffffff;
+}
+
+.notification-snackbar {
+  --mdc-snackbar-container-color: rgba(255, 255, 255, 0.85);
+  --mdc-snackbar-supporting-text-color: var(--color-text-primary);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-primary-light);
+  border-left: 4px solid var(--color-primary);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  
+  .mdc-button__label {
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+}
+
+.dark-theme .notification-snackbar {
+  --mdc-snackbar-container-color: rgba(30, 30, 30, 0.85);
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  border: 1px solid #333;
+  border-left: 4px solid var(--color-primary);
 }
  

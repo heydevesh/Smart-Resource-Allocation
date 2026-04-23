@@ -1,7 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { AuthService } from '../../core/auth/auth.service';
+import { inject } from '@angular/core';
+import { FirestoreService } from '../../core/firebase/firestore.service';
+import { InventoryItem, InventoryTransaction } from '../../models';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-resource-vault',
@@ -13,10 +19,12 @@ import { MatButtonModule } from '@angular/material/button';
         <p class="subtitle">Central Node • Mumbai</p>
         <h1 class="title">Resource Vault</h1>
       </div>
-      <button mat-flat-button class="request-btn">
-        <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">add_circle</mat-icon>
-        Request Resource
-      </button>
+      @if (auth.hasPermission('request_inventory')) {
+        <button mat-flat-button class="request-btn" (click)="scanQRCode()">
+          <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">qr_code_scanner</mat-icon>
+          Scan Handover
+        </button>
+      }
     </div>
 
     <div class="grid-layout">
@@ -31,92 +39,74 @@ import { MatButtonModule } from '@angular/material/button';
             <p>Predictive models indicate a 40% spike in demand for Shelter Kits and Water Purification in Sector 4 within 72 hours.</p>
           </div>
         </div>
-        <button class="review-btn">Review Allocation</button>
+        @if (auth.hasPermission('manage_inventory')) {
+          <button class="review-btn">Review Allocation</button>
+        }
       </div>
 
       <!-- Main Column -->
       <div class="main-column">
         <!-- Critical Stock -->
-        <div class="stock-card critical">
-          <div class="stock-header">
-            <div>
-              <div class="title-row">
-                <h2>Medical Supplies</h2>
-                <span class="badge">Critical Stock-Out</span>
+        @if (criticalItems$ | async; as criticalItems) {
+          @if (criticalItems.length > 0) {
+            <div class="stock-card critical">
+              <div class="stock-header">
+                <div>
+                  <div class="title-row">
+                    <h2>{{criticalItems[0].name}}</h2>
+                    <span class="badge">Critical Stock</span>
+                  </div>
+                  <p>{{criticalItems[0].description}}</p>
+                </div>
+                <div class="percentage">
+                  <span class="value">{{getPercentage(criticalItems[0])}}%</span>
+                  <span class="label">Capacity</span>
+                </div>
               </div>
-              <p>Trauma kits, IV fluids, basic antibiotics.</p>
+              <div class="progress-bar">
+                <div class="fill" [style.width.%]="getPercentage(criticalItems[0])"></div>
+              </div>
+              <div class="stock-footer">
+                <span>Available: <strong>{{criticalItems[0].quantity}}</strong> {{criticalItems[0].unit}}</span>
+                <span class="target">Target: {{getTarget(criticalItems[0])}} {{criticalItems[0].unit}}</span>
+              </div>
             </div>
-            <div class="percentage">
-              <span class="value">12%</span>
-              <span class="label">Capacity</span>
-            </div>
-          </div>
-          <div class="progress-bar">
-            <div class="fill" style="width: 12%"></div>
-          </div>
-          <div class="stock-footer">
-            <span>Available: <strong>45</strong> units</span>
-            <span class="target">Target: 400 units</span>
-          </div>
-        </div>
+          }
+        }
 
         <!-- Grid of standard items -->
         <div class="item-grid">
-          <div class="item-card">
-            <div class="item-info">
-              <h3>Food Rations</h3>
-              <p>MREs, dry grains, infant formula.</p>
-            </div>
-            <div class="item-stats">
-              <div class="stat-row">
-                <span class="value">85%</span>
-                <span class="count">1,200 <small>pallets</small></span>
-              </div>
-              <div class="progress-bar mini">
-                <div class="fill" style="width: 85%"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="item-card warning">
-            <div class="item-info">
-              <div class="title-row">
-                <h3>Water Supply</h3>
-                <mat-icon fontSet="material-symbols-rounded">warning</mat-icon>
-              </div>
-              <p>Bottled water, purification tablets.</p>
-            </div>
-            <div class="item-stats">
-              <div class="stat-row">
-                <span class="value warn">38%</span>
-                <span class="count">450 <small>liters</small></span>
-              </div>
-              <div class="progress-bar mini">
-                <div class="fill warn" style="width: 38%"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="item-card wide">
-            <div class="item-info-row">
+          @for (item of inventoryItems$ | async; track item.id) {
+            <div class="item-card" [class.warning]="item.status === 'low'">
               <div class="item-info">
-                <h3>Shelter Kits</h3>
-                <p>Tents, tarps, thermal blankets.</p>
+                <div class="title-row">
+                  <h3>{{item.name}}</h3>
+                  @if (item.status === 'low') {
+                    <mat-icon fontSet="material-symbols-rounded">warning</mat-icon>
+                  }
+                </div>
+                <p>{{item.description}}</p>
               </div>
-              <div class="item-stats-header">
-                <span class="value">62%</span>
-                <span class="count">310 <small>units available</small></span>
+              <div class="item-stats">
+                <div class="stat-row">
+                  <span class="value" [class.warn]="item.status === 'low'">{{getPercentage(item)}}%</span>
+                  <span class="count">{{item.quantity}} <small>{{item.unit}}</small></span>
+                </div>
+                <div class="progress-bar mini">
+                  <div class="fill" [class.warn]="item.status === 'low'" [style.width.%]="getPercentage(item)"></div>
+                </div>
               </div>
             </div>
-            <div class="multi-progress">
-              <div class="fill primary" style="width: 40%"></div>
-              <div class="fill secondary" style="width: 22%"></div>
+          }
+
+          @if ((inventoryItems$ | async)?.length === 0) {
+            <div class="item-card">
+              <div class="item-info">
+                <h3>No Inventory</h3>
+                <p>Add resources to track stock.</p>
+              </div>
             </div>
-            <div class="legend">
-              <div class="legend-item"><span class="dot primary"></span> Tents</div>
-              <div class="legend-item"><span class="dot secondary"></span> Blankets</div>
-            </div>
-          </div>
+          }
         </div>
       </div>
 
@@ -144,30 +134,25 @@ import { MatButtonModule } from '@angular/material/button';
             <button class="view-all">View All</button>
           </div>
           <div class="feed-items">
-            <div class="feed-item">
-              <div class="icon-box">
-                <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">local_shipping</mat-icon>
-              </div>
-              <div class="feed-content">
-                <div class="feed-title">
-                  <h4>Dispatched: Water</h4>
-                  <span class="time">10 MIN AGO</span>
+            @for (tx of recentTransactions$ | async; track tx.id) {
+              <div class="feed-item">
+                <div class="icon-box" [class.primary]="tx.type === 'inbound'">
+                  <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">
+                    {{tx.type === 'outbound' ? 'local_shipping' : 'flight_land'}}
+                  </mat-icon>
                 </div>
-                <p>200 liters sent to Mobile Unit C in Ward 4.</p>
-              </div>
-            </div>
-            <div class="feed-item">
-              <div class="icon-box primary">
-                <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">flight_land</mat-icon>
-              </div>
-              <div class="feed-content">
-                <div class="feed-title">
-                  <h4>Incoming: Med Kits</h4>
-                  <span class="time">ETA 2 HRS</span>
+                <div class="feed-content">
+                  <div class="feed-title">
+                    <h4>{{tx.type === 'outbound' ? 'Dispatched' : 'Incoming'}}</h4>
+                    <span class="time">JUST NOW</span>
+                  </div>
+                  <p>{{tx.quantity}} units {{tx.type === 'outbound' ? 'sent' : 'received'}}. {{tx.notes}}</p>
                 </div>
-                <p>Red Cross airdrop arriving at North Helipad. 350 units.</p>
               </div>
-            </div>
+            }
+            @if ((recentTransactions$ | async)?.length === 0) {
+              <p style="color: var(--color-text-secondary); font-size: 12px;">No recent transactions.</p>
+            }
           </div>
         </div>
       </div>
@@ -271,7 +256,7 @@ import { MatButtonModule } from '@angular/material/button';
     }
 
     .stock-card {
-      background-color: white;
+      background-color: var(--color-card);
       border-radius: 14px;
       padding: 32px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.02);
@@ -369,7 +354,7 @@ import { MatButtonModule } from '@angular/material/button';
     }
 
     .item-card {
-      background-color: white;
+      background-color: var(--color-card);
       border-radius: 14px;
       padding: 24px;
       height: 200px;
@@ -490,7 +475,7 @@ import { MatButtonModule } from '@angular/material/button';
     }
 
     .map-card {
-      background-color: white;
+      background-color: var(--color-card);
       border-radius: 14px;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.02);
@@ -589,7 +574,7 @@ import { MatButtonModule } from '@angular/material/button';
     }
 
     .feed-item {
-      background-color: white;
+      background-color: var(--color-card);
       padding: 16px;
       border-radius: 12px;
       display: flex;
@@ -642,5 +627,59 @@ import { MatButtonModule } from '@angular/material/button';
     }
   `]
 })
-export class ResourceVaultComponent {}
+export class ResourceVaultComponent implements OnInit {
+  auth = inject(AuthService);
+  private firestoreService = inject(FirestoreService);
 
+  inventoryItems$!: Observable<InventoryItem[]>;
+  criticalItems$!: Observable<InventoryItem[]>;
+  recentTransactions$!: Observable<InventoryTransaction[]>;
+
+  ngOnInit() {
+    this.inventoryItems$ = this.firestoreService.getInventoryItems();
+    this.criticalItems$ = this.inventoryItems$.pipe(
+      map(items => items.filter(item => item.status === 'critical' || item.status === 'out_of_stock'))
+    );
+    this.recentTransactions$ = this.firestoreService.getInventoryTransactions().pipe(
+      map(txs => txs.slice(0, 5))
+    );
+  }
+
+  async scanQRCode() {
+    // Simulated QR code scanning logic for handover
+    const simulatedQrCode = 'MED-KIT-101';
+    
+    try {
+      const item = await this.firestoreService.getInventoryItemByQRCode(simulatedQrCode);
+      if (item) {
+        // Log an outbound transaction
+        await this.firestoreService.logInventoryTransaction({
+          itemId: item.id,
+          type: 'outbound',
+          quantity: 1, // Simulated 1 unit
+          performedBy: this.auth.currentUser?.uid || 'unknown',
+          notes: 'Handover via QR Scan',
+          qrCodeScanned: true
+        });
+        alert(`Successfully scanned and checked out 1 unit of ${item.name}`);
+      } else {
+        alert('QR Code not found in inventory.');
+      }
+    } catch (e) {
+      console.error('Error scanning QR code', e);
+      alert('Error scanning QR code.');
+    }
+  }
+
+  getPercentage(item: InventoryItem): number {
+    if (item.minimumThreshold === 0) return 100;
+    // Assuming target is e.g. 3 times the minimum threshold
+    const target = item.minimumThreshold * 3;
+    const pct = (item.quantity / target) * 100;
+    return Math.min(Math.round(pct), 100);
+  }
+
+  getTarget(item: InventoryItem): number {
+    return item.minimumThreshold * 3;
+  }
+}

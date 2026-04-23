@@ -13,6 +13,7 @@ import { StorageService } from '../../core/firebase/storage.service';
 import { GeolocationService } from '../../core/maps/geolocation.service';
 import { Timestamp } from '@angular/fire/firestore';
 import { AuthService } from '../../core/auth/auth.service';
+import { VerificationService } from '../../core/verification/verification.service';
 
 @Component({
   selector: 'app-report-need',
@@ -40,6 +41,7 @@ export class ReportNeedComponent {
   private auth = inject(AuthService);
   private snackBar = inject(MatSnackBar);
   public dialogRef = inject(MatDialogRef<ReportNeedComponent>);
+  private verification = inject(VerificationService);
 
   reportForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(5)]],
@@ -51,12 +53,63 @@ export class ReportNeedComponent {
 
   isDetectingLocation = false;
   isUploading = false;
+  isListening = false;
   currentCoords: { lat: number; lng: number } | null = null;
   selectedPhoto: File | null = null;
   photoPreview: string | null = null;
+  private recognition: any;
 
   constructor() {
     this.detectLocation();
+    this.initVoiceRecognition();
+  }
+
+  private initVoiceRecognition() {
+    const windowObj = window as any;
+    const SpeechRecognition = windowObj.SpeechRecognition || windowObj.webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      this.recognition = new SpeechRecognition();
+      this.recognition.continuous = true;
+      this.recognition.interimResults = true;
+      this.recognition.lang = 'en-IN'; // Supporting Indian English/Accent
+
+      this.recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        
+        const currentText = this.reportForm.get('description')?.value || '';
+        this.reportForm.patchValue({
+          description: currentText + (currentText ? ' ' : '') + transcript
+        });
+      };
+
+      this.recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        this.isListening = false;
+      };
+
+      this.recognition.onend = () => {
+        this.isListening = false;
+      };
+    }
+  }
+
+  toggleVoiceInput() {
+    if (!this.recognition) {
+      this.snackBar.open('Voice input not supported in this browser.', 'OK', { duration: 3000 });
+      return;
+    }
+
+    if (this.isListening) {
+      this.recognition.stop();
+    } else {
+      this.isListening = true;
+      this.recognition.start();
+      this.snackBar.open('Listening... Speak your intelligence report.', 'Stop', { duration: 5000 });
+    }
   }
 
   async detectLocation() {
@@ -96,6 +149,16 @@ export class ReportNeedComponent {
       let photoUrl = '';
       if (this.selectedPhoto) {
         try {
+          this.snackBar.open('Verifying evidence photo via Cloud Vision...', '', { duration: 2000 });
+          const base64 = await this.verification.fileToDataUrl(this.selectedPhoto);
+          const visionResult = await this.verification.detectFaceWithVision(base64);
+          
+          if (!visionResult.faceDetected) {
+            this.snackBar.open('Verification failed: No human presence detected in evidence photo.', 'Dismiss', { duration: 5000 });
+            this.isUploading = false;
+            return;
+          }
+
           const path = `needs/${Date.now()}_${this.selectedPhoto.name}`;
           photoUrl = await this.storage.uploadPhoto(this.selectedPhoto, path);
         } catch (error) {

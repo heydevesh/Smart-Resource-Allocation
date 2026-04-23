@@ -13,6 +13,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { NeedBottomSheetComponent } from '../../shared/components/need-bottom-sheet/need-bottom-sheet.component';
 import { ReportNeedComponent } from '../../modals/report-need/report-need.component';
 import { AddVolunteerComponent } from '../../modals/add-volunteer/add-volunteer.component';
+import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader/skeleton-loader.component';
 
 @Component({
   selector: 'app-home',
@@ -23,7 +24,8 @@ import { AddVolunteerComponent } from '../../modals/add-volunteer/add-volunteer.
     MatButtonModule,
     RouterLink,
     MatBottomSheetModule,
-    MatDialogModule
+    MatDialogModule,
+    SkeletonLoaderComponent
   ],
   template: `
     <div class="page-wrapper">
@@ -43,22 +45,30 @@ import { AddVolunteerComponent } from '../../modals/add-volunteer/add-volunteer.
             </p>
             <div class="ai-briefing glass-panel">
               <mat-icon class="sparkle" fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">auto_awesome</mat-icon>
-              <p>{{ aiNarrative() }}</p>
+              @if (aiLoading()) {
+                <app-skeleton-loader variant="paragraph" width="100%"></app-skeleton-loader>
+              } @else {
+                <p>{{ aiNarrative() }}</p>
+              }
             </div>
           </div>
         </header>
 
         <!-- Stats Horizon -->
         <section class="stats-horizon">
-          <div class="stat-card glass-panel" *ngFor="let stat of stats()">
-            <div class="stat-icon" [ngClass]="stat.color">
-              <mat-icon>{{ stat.icon }}</mat-icon>
+          @if (isLoading()) {
+            <app-skeleton-loader variant="stat-card" [count]="4"></app-skeleton-loader>
+          } @else {
+            <div class="stat-card glass-panel" *ngFor="let stat of stats()">
+              <div class="stat-icon" [ngClass]="stat.color">
+                <mat-icon>{{ stat.icon }}</mat-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-label">{{ stat.label }}</span>
+                <h3 class="stat-value">{{ stat.value }}</h3>
+              </div>
             </div>
-            <div class="stat-info">
-              <span class="stat-label">{{ stat.label }}</span>
-              <h3 class="stat-value">{{ stat.value }}</h3>
-            </div>
-          </div>
+          }
         </section>
 
         <!-- Dashboard Grid -->
@@ -71,7 +81,9 @@ import { AddVolunteerComponent } from '../../modals/add-volunteer/add-volunteer.
             </div>
 
             <div class="needs-feed glass-panel">
-              <ng-container *ngIf="recentNeeds().length > 0; else noNeeds">
+              @if (isLoading()) {
+                <app-skeleton-loader variant="need-row" [count]="3"></app-skeleton-loader>
+              } @else if (recentNeeds().length > 0) {
                 <div *ngFor="let need of recentNeeds() | slice:0:3"
                      class="need-row"
                      (click)="onNeedClick(need)">
@@ -94,14 +106,12 @@ import { AddVolunteerComponent } from '../../modals/add-volunteer/add-volunteer.
                     <button mat-flat-button class="assign-btn" (click)="onAssignClick($event, need)">Assign</button>
                   </div>
                 </div>
-              </ng-container>
-
-              <ng-template #noNeeds>
+              } @else {
                 <div class="empty-feed">
                   <mat-icon fontSet="material-symbols-rounded">verified</mat-icon>
                   <p>Regional perimeter secured. No pending alerts.</p>
                 </div>
-              </ng-template>
+              }
             </div>
 
             <!-- Quick Action Grid -->
@@ -134,40 +144,48 @@ import { AddVolunteerComponent } from '../../modals/add-volunteer/add-volunteer.
               <h2>Intelligence</h2>
             </div>
 
-            <div *ngIf="latestMatch()" class="intel-card glass-panel highlight">
-              <div class="intel-header">
-                <mat-icon class="sparkle" fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">auto_awesome</mat-icon>
-                <h3>AI Match Ready</h3>
-              </div>
-              <p class="intel-reason">{{ latestMatch()?.reason }}</p>
-
-              <div class="intel-metrics">
-                <div class="metric-row">
-                  <span>Alignment</span>
-                  <span class="primary">{{ Math.round((latestMatch()?.confidenceScore || 0) * 100) }}%</span>
+            @if (isLoading()) {
+              <app-skeleton-loader variant="card" [count]="1"></app-skeleton-loader>
+            } @else if (latestMatch()) {
+              <div class="intel-card glass-panel highlight">
+                <div class="intel-header">
+                  <mat-icon class="sparkle" fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 1;">auto_awesome</mat-icon>
+                  <h3>AI Match Ready</h3>
                 </div>
-                <div class="progress-bar">
-                  <div class="fill" [style.width.%]="(latestMatch()?.confidenceScore || 0) * 100"></div>
-                </div>
-              </div>
+                <p class="intel-reason">{{ latestMatch()?.reason }}</p>
 
-              <button mat-flat-button color="primary" class="review-btn" (click)="reviewMatch()">Review Matches</button>
-            </div>
+                <div class="intel-metrics">
+                  <div class="metric-row">
+                    <span>Alignment</span>
+                    <span class="primary">{{ Math.round((latestMatch()?.confidenceScore || 0) * 100) }}%</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="fill" [style.width.%]="(latestMatch()?.confidenceScore || 0) * 100"></div>
+                  </div>
+                </div>
+
+                <button mat-flat-button color="primary" class="review-btn" (click)="reviewMatch()">Review Matches</button>
+              </div>
+            }
 
             <div class="section-header mt-8">
               <h2>Recent Activity</h2>
             </div>
             <div class="activity-log glass-panel">
-              <div class="activity-item" *ngFor="let activity of recentActivities()">
-                <div class="activity-dot" [ngClass]="activity.dotClass"></div>
-                <div class="activity-content">
-                  <p [innerHTML]="activity.text"></p>
-                  <span class="activity-time">{{ activity.timestamp?.toDate() | date:'shortTime' }}</span>
+              @if (isLoading()) {
+                <app-skeleton-loader variant="card" [count]="3"></app-skeleton-loader>
+              } @else {
+                <div class="activity-item" *ngFor="let activity of recentActivities()">
+                  <div class="activity-dot" [ngClass]="activity.dotClass"></div>
+                  <div class="activity-content">
+                    <p [innerHTML]="activity.text"></p>
+                    <span class="activity-time">{{ activity.timestamp?.toDate() | date:'shortTime' }}</span>
+                  </div>
                 </div>
-              </div>
-              <div *ngIf="recentActivities().length === 0" class="empty-log">
-                <p>No recent operational logs.</p>
-              </div>
+                <div *ngIf="recentActivities().length === 0" class="empty-log">
+                  <p>No recent operational logs.</p>
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -545,9 +563,14 @@ export class HomeComponent implements OnInit {
 
   latestMatch = signal<VolunteerMatch | null>(null);
   aiNarrative = signal<string>('Analyzing regional patterns...');
+  isLoading = signal<boolean>(true);
+  aiLoading = signal<boolean>(true);
   Math = Math;
 
   ngOnInit() {
+    // Auto-clear loading once first Firestore data arrives or after timeout
+    setTimeout(() => this.isLoading.set(false), 2500);
+
     // Simulate AI match after delay
     setTimeout(() => {
       this.latestMatch.set({
@@ -564,6 +587,7 @@ export class HomeComponent implements OnInit {
   }
 
   async generateAiNarrative() {
+    this.aiLoading.set(true);
     try {
       const response = await this.agentService.narrateReport({
         needs: this.recentNeeds().length,
@@ -579,6 +603,8 @@ export class HomeComponent implements OnInit {
       }
     } catch {
       this.aiNarrative.set('Ready for missions in Dharavi and Kurla.');
+    } finally {
+      this.aiLoading.set(false);
     }
   }
 
@@ -624,7 +650,7 @@ export class HomeComponent implements OnInit {
 
   reportNeed() {
     this.dialog.open(ReportNeedComponent, {
-      width: '600px',
+      width: '650px',
       maxWidth: '90vw',
       panelClass: 'glass-dialog'
     });

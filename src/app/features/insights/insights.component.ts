@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AgentService } from '../../core/ai/agent.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { SurgePrediction } from '../../models';
 import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader/skeleton-loader.component';
 
@@ -56,7 +57,7 @@ import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader
       </section>
 
       <!-- Donor Narrative Section -->
-      <section class="insight-section mt-4">
+      <section class="insight-section mt-4" *ngIf="auth.hasPermission('view_insights_ngo')">
         <div class="section-header">
           <h2>Donor Narrative</h2>
         </div>
@@ -139,6 +140,7 @@ import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader
     }
     .mt-4 { margin-top: 32px; }
     .mb-2 { margin-bottom: 16px; display: block; }
+    .mb-4 { margin-bottom: 24px; display: block; }
     
     .section-header {
       display: flex;
@@ -287,6 +289,7 @@ import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader
 })
 export class InsightsComponent {
   private agentService = inject(AgentService);
+  auth = inject(AuthService);
   
   predictions = signal<SurgePrediction[]>([]);
   loadingPredictions = signal<boolean>(false);
@@ -338,25 +341,24 @@ export class InsightsComponent {
     } catch (e) {
       console.error(e);
       // Fallback for demo
-      setTimeout(() => {
-        this.predictions.set([
-          {
-            category: 'medical',
-            predictedCount: 45,
-            confidence: 0.85,
-            week: 'Next Week',
-            reasoning: 'Historical data indicates a spike in water-borne diseases at the onset of monsoons.'
-          },
-          {
-            category: 'shelter',
-            predictedCount: 20,
-            confidence: 0.60,
-            week: 'Next Week',
-            reasoning: 'Potential localized flooding in low-lying areas based on weather forecasts.'
-          }
-        ]);
-        this.loadingPredictions.set(false);
-      }, 1500);
+      this.predictions.set([
+        {
+          category: 'medical',
+          predictedCount: 45,
+          confidence: 0.85,
+          week: 'Next Week',
+          reasoning: 'Historical data indicates a spike in water-borne diseases at the onset of monsoons.'
+        },
+        {
+          category: 'shelter',
+          predictedCount: 20,
+          confidence: 0.60,
+          week: 'Next Week',
+          reasoning: 'Potential localized flooding in low-lying areas based on weather forecasts.'
+        }
+      ]);
+    } finally {
+      this.loadingPredictions.set(false);
     }
   }
 }

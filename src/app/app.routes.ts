@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { permissionGuard } from './core/auth/role.guard';
 import { AppShellComponent } from './app-shell/app-shell.component';
 
 export const routes: Routes = [
@@ -9,17 +10,24 @@ export const routes: Routes = [
       import("./auth/login/login.component").then((m) => m.LoginComponent),
   },
   {
+    path: "register",
+    loadComponent: () =>
+      import("./auth/register/register.component").then((m) => m.RegisterComponent),
+  },
+  {
     path: "",
     component: AppShellComponent,
     canActivate: [authGuard],
     children: [
       {
         path: "home",
+        canActivate: [permissionGuard('view_home')],
         loadComponent: () =>
           import("./features/home/home.component").then((m) => m.HomeComponent),
       },
       {
         path: "needs-map",
+        canActivate: [permissionGuard('view_map')],
         loadComponent: () =>
           import("./features/needs-map/needs-map.component").then(
             (m) => m.NeedsMapComponent,
@@ -27,6 +35,7 @@ export const routes: Routes = [
       },
       {
         path: "tasks",
+        canActivate: [permissionGuard('view_tasks')],
         loadComponent: () =>
           import("./features/tasks/tasks.component").then(
             (m) => m.TasksComponent,
@@ -34,6 +43,7 @@ export const routes: Routes = [
       },
       {
         path: 'volunteers',
+        canActivate: [permissionGuard(['view_team_profiles', 'view_all_volunteers'])],
         loadComponent: () =>
           import('./features/volunteers/volunteers.component').then(
             (m) => m.VolunteersComponent,
@@ -41,6 +51,7 @@ export const routes: Routes = [
       },
       {
         path: 'resource-vault',
+        canActivate: [permissionGuard('view_inventory')],
         loadComponent: () =>
           import('./features/resource-vault/resource-vault.component').then(
             (m) => m.ResourceVaultComponent,
@@ -48,6 +59,7 @@ export const routes: Routes = [
       },
       {
         path: 'ngo-registry',
+        canActivate: [permissionGuard('view_registry')],
         loadComponent: () =>
           import('./features/ngo-registry/ngo-registry.component').then(
             (m) => m.NgoRegistryComponent,
@@ -61,10 +73,19 @@ export const routes: Routes = [
           ),
       },
       {
-        path: "insights",
+        path: 'insights',
+        canActivate: [permissionGuard(['view_insights_own', 'view_insights_team', 'view_insights_ngo'])],
         loadComponent: () =>
           import("./features/insights/insights.component").then(
             (m) => m.InsightsComponent,
+          ),
+      },
+      {
+        path: 'verification-status',
+        canActivate: [permissionGuard('view_application_status')],
+        loadComponent: () =>
+          import('./features/verification-status/verification-status.component').then(
+            (m) => m.VerificationStatusComponent,
           ),
       },
       { path: "", redirectTo: "home", pathMatch: "full" },

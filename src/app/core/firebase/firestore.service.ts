@@ -1,22 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, doc, docData, collectionData, query, where, orderBy, setDoc, updateDoc, deleteDoc, enableIndexedDbPersistence } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
-import { Need, Task, Volunteer, Activity } from '../../models';
+import { Firestore, collection, doc, docData, collectionData, query, where, orderBy, setDoc, updateDoc, deleteDoc, getDoc, limit } from '@angular/fire/firestore';
+import { Observable, map } from 'rxjs';
+import { Need, Task, Volunteer, Activity, User, UserRole, InventoryItem, InventoryTransaction, Ngo, NgoStatus, NgoMembership, NotificationPreferences, DEFAULT_NOTIFICATION_PREFERENCES } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
   private firestore = inject(Firestore);
-
-  constructor() {
-    // Enable offline persistence
-    enableIndexedDbPersistence(this.firestore).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
-      } else if (err.code === 'unimplemented') {
-        console.warn('The current browser does not support all of the features required to enable persistence');
-      }
-    });
-  }
 
   // --- Needs ---
   getOpenNeeds(): Observable<Need[]> {
@@ -94,17 +83,17 @@ export class FirestoreService {
   }
 
   async addVolunteer(volunteer: Partial<Volunteer>): Promise<void> {
-    const newDocRef = doc(collection(this.firestore, 'volunteers'));
+    const id = volunteer.id || doc(collection(this.firestore, 'volunteers')).id;
     const volWithId = { 
       ...volunteer, 
-      id: newDocRef.id,
-      rating: 0,
-      tasksCompleted: 0,
-      totalHours: 0,
+      id: id,
+      rating: volunteer.rating || 0,
+      tasksCompleted: volunteer.tasksCompleted || 0,
+      totalHours: volunteer.totalHours || 0,
       active: true,
       available: true
     };
-    await setDoc(newDocRef, volWithId);
+    await setDoc(doc(this.firestore, `volunteers/${id}`), volWithId);
   }
 
   async semanticSearch(queryStr: string): Promise<Need[]> {
@@ -115,6 +104,57 @@ export class FirestoreService {
     // For now, this is a placeholder per the design.
     console.log('Semantic search requested for:', queryStr);
     return [];
+  }
+
+  // --- Users & Onboarding ---
+  getApplicants(): Observable<User[]> {
+    const usersRef = collection(this.firestore, 'users');
+    const q = query(usersRef, where('role', '==', 'applicant'), orderBy('displayName', 'asc'));
+    return collectionData(q, { idField: 'uid' }) as Observable<User[]>;
+  }
+
+  getUsersByRole(role: UserRole): Observable<User[]> {
+    const usersRef = collection(this.firestore, 'users');
+    const q = query(usersRef, where('role', '==', role), orderBy('displayName', 'asc'));
+    return collectionData(q, { idField: 'uid' }) as Observable<User[]>;
+  }
+
+  async updateUserRole(uid: string, role: UserRole, status: User['verificationStatus']): Promise<void> {
+    const userDoc = doc(this.firestore, `users/${uid}`);
+    await updateDoc(userDoc, { 
+      role, 
+      verificationStatus: status,
+      updatedAt: new Date()
+    });
+    
+    // If becoming a volunteer, also ensure they exist in the volunteers collection for mapping
+    if (role === 'volunteer' && status === 'approved') {
+      const userData = await this.getUserById(uid);
+      if (userData) {
+        await this.addVolunteer({
+          id: uid,
+          name: userData.displayName,
+          phone: userData.phone || '',
+          skills: userData.skills || [],
+          active: true,
+          available: true
+        });
+      }
+    }
+  }
+
+  async updateUserProfile(uid: string, data: Partial<User>): Promise<void> {
+    const userDoc = doc(this.firestore, `users/${uid}`);
+    await updateDoc(userDoc, {
+      ...data,
+      updatedAt: new Date()
+    });
+  }
+
+  async getUserById(uid: string): Promise<User | undefined> {
+    const userDoc = doc(this.firestore, `users/${uid}`);
+    const snapshot = await getDoc(userDoc);
+    return snapshot.exists() ? (snapshot.data() as User) : undefined;
   }
 
   // --- Activities ---
@@ -139,4 +179,210 @@ export class FirestoreService {
     const q = query(activitiesRef, where('userId', '==', volunteerId), orderBy('timestamp', 'desc'));
     return collectionData(q, { idField: 'id' }) as Observable<Activity[]>;
   }
+
+  // --- Inventory ---
+  getInventoryItems(): Observable<InventoryItem[]> {
+    const inventoryRef = collection(this.firestore, 'inventory');
+    const q = query(inventoryRef, orderBy('name', 'asc'));
+    return collectionData(q, { idField: 'id' }) as Observable<InventoryItem[]>;
+  }
+
+  getInventoryItemById(id: string): Observable<InventoryItem | undefined> {
+    const itemDoc = doc(this.firestore, `inventory/${id}`);
+    return docData(itemDoc, { idField: 'id' }) as Observable<InventoryItem | undefined>;
+  }
+
+  async addInventoryItem(item: Partial<InventoryItem>): Promise<void> {
+    const newDocRef = doc(collection(this.firestore, 'inventory'));
+    const itemWithId = {
+      ...item,
+      id: newDocRef.id,
+      lastUpdated: new Date()
+    };
+    await setDoc(newDocRef, itemWithId);
+  }
+
+  async updateInventoryItem(id: string, data: Partial<InventoryItem>): Promise<void> {
+    const itemDoc = doc(this.firestore, `inventory/${id}`);
+    await updateDoc(itemDoc, {
+      ...data,
+      lastUpdated: new Date()
+    });
+  }
+
+  getInventoryTransactions(itemId?: string): Observable<InventoryTransaction[]> {
+    const transactionsRef = collection(this.firestore, 'inventory_transactions');
+    let q = query(transactionsRef, orderBy('timestamp', 'desc'));
+    if (itemId) {
+      q = query(transactionsRef, where('itemId', '==', itemId), orderBy('timestamp', 'desc'));
+    }
+    return collectionData(q, { idField: 'id' }) as Observable<InventoryTransaction[]>;
+  }
+
+  async logInventoryTransaction(transaction: Partial<InventoryTransaction>): Promise<void> {
+    const transactionsRef = collection(this.firestore, 'inventory_transactions');
+    const newDocRef = doc(transactionsRef);
+    const tx = {
+      ...transaction,
+      id: newDocRef.id,
+      timestamp: new Date()
+    };
+    await setDoc(newDocRef, tx);
+
+    // Automatically adjust inventory quantity
+    if (tx.itemId && tx.quantity) {
+      const itemSnapshot = await getDoc(doc(this.firestore, `inventory/${tx.itemId}`));
+      if (itemSnapshot.exists()) {
+        const currentData = itemSnapshot.data() as InventoryItem;
+        let newQuantity = currentData.quantity;
+        
+        if (tx.type === 'inbound') {
+          newQuantity += tx.quantity;
+        } else if (tx.type === 'outbound') {
+          newQuantity -= tx.quantity;
+        } else if (tx.type === 'adjustment') {
+          newQuantity = tx.quantity; // Adjust to an exact quantity
+        }
+
+        // Determine new status
+        let newStatus: InventoryItem['status'] = 'optimal';
+        if (newQuantity <= 0) newStatus = 'out_of_stock';
+        else if (newQuantity <= currentData.minimumThreshold / 2) newStatus = 'critical';
+        else if (newQuantity <= currentData.minimumThreshold) newStatus = 'low';
+
+        await this.updateInventoryItem(tx.itemId, {
+          quantity: newQuantity,
+          status: newStatus
+        });
+      }
+    }
+  }
+
+  async getInventoryItemByQRCode(qrCode: string): Promise<InventoryItem | undefined> {
+    const inventoryRef = collection(this.firestore, 'inventory');
+    const q = query(inventoryRef, where('qrCode', '==', qrCode));
+    // Actual implementation of finding by query
+    return new Promise((resolve) => {
+      // we need getDocs, so we will import getDocs if needed, but to avoid extra imports we can just do a query using collectionData 
+      const sub = collectionData(q, { idField: 'id' }).subscribe(items => {
+        sub.unsubscribe();
+        resolve(items.length > 0 ? items[0] as InventoryItem : undefined);
+      });
+    });
+  }
+
+  // --- NGO Registry ---
+  getNgos(): Observable<Ngo[]> {
+    const ngosRef = collection(this.firestore, 'ngos');
+    const q = query(ngosRef, orderBy('name', 'asc'));
+    return collectionData(q, { idField: 'id' }) as Observable<Ngo[]>;
+  }
+
+  getActiveNgos(): Observable<Ngo[]> {
+    const ngosRef = collection(this.firestore, 'ngos');
+    const q = query(ngosRef, where('status', '==', 'active'), orderBy('name', 'asc'));
+    return collectionData(q, { idField: 'id' }) as Observable<Ngo[]>;
+  }
+
+  getNgosByStatus(status: NgoStatus): Observable<Ngo[]> {
+    const ngosRef = collection(this.firestore, 'ngos');
+    const q = query(ngosRef, where('status', '==', status), orderBy('createdAt', 'desc'));
+    return collectionData(q, { idField: 'id' }) as Observable<Ngo[]>;
+  }
+
+  getNgoById(id: string): Observable<Ngo | undefined> {
+    const ngoDoc = doc(this.firestore, `ngos/${id}`);
+    return docData(ngoDoc, { idField: 'id' }) as Observable<Ngo | undefined>;
+  }
+
+  async addNgo(ngo: Partial<Ngo>): Promise<string> {
+    const newDocRef = doc(collection(this.firestore, 'ngos'));
+    const ngoWithId = {
+      ...ngo,
+      id: newDocRef.id,
+      status: 'pending_review' as NgoStatus,
+      volunteerCount: 0,
+      activeMissionCount: 0,
+      totalMissionsCompleted: 0,
+      memberIds: ngo.founderId ? [ngo.founderId] : [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    await setDoc(newDocRef, ngoWithId);
+    return newDocRef.id;
+  }
+
+  async updateNgo(id: string, data: Partial<Ngo>): Promise<void> {
+    const ngoDoc = doc(this.firestore, `ngos/${id}`);
+    await updateDoc(ngoDoc, {
+      ...data,
+      updatedAt: new Date()
+    });
+  }
+
+  async approveNgo(id: string, approvedByUid: string): Promise<void> {
+    const ngoDoc = doc(this.firestore, `ngos/${id}`);
+    await updateDoc(ngoDoc, {
+      status: 'active',
+      approvedAt: new Date(),
+      approvedBy: approvedByUid,
+      updatedAt: new Date()
+    });
+  }
+
+  async suspendNgo(id: string): Promise<void> {
+    await this.updateNgo(id, { status: 'suspended' });
+  }
+
+  // --- NGO Membership ---
+  getNgoMembers(ngoId: string): Observable<NgoMembership[]> {
+    const membershipsRef = collection(this.firestore, 'ngo_memberships');
+    const q = query(membershipsRef, where('ngoId', '==', ngoId), where('isActive', '==', true));
+    return collectionData(q, { idField: 'id' }) as Observable<NgoMembership[]>;
+  }
+
+  async addNgoMember(membership: Partial<NgoMembership>): Promise<void> {
+    const newDocRef = doc(collection(this.firestore, 'ngo_memberships'));
+    await setDoc(newDocRef, {
+      ...membership,
+      joinedAt: new Date(),
+      isActive: true
+    });
+  }
+
+  // --- Notification Preferences ---
+  getNotificationPreferences(uid: string): Observable<NotificationPreferences> {
+    const prefsDoc = doc(this.firestore, `notification_preferences/${uid}`);
+    return docData(prefsDoc).pipe(
+      map((data: any) => {
+        if (!data) return DEFAULT_NOTIFICATION_PREFERENCES;
+        return { ...DEFAULT_NOTIFICATION_PREFERENCES, ...data } as NotificationPreferences;
+      })
+    );
+  }
+
+  async saveNotificationPreferences(uid: string, prefs: Partial<NotificationPreferences>): Promise<void> {
+    const prefsDoc = doc(this.firestore, `notification_preferences/${uid}`);
+    await setDoc(prefsDoc, prefs, { merge: true });
+  }
+
+  // --- Dashboard Aggregations ---
+  getRecentNeedsByRegion(region: string): Observable<Need[]> {
+    const needsRef = collection(this.firestore, 'needs');
+    const q = query(
+      needsRef,
+      where('locationName', '==', region),
+      where('status', '==', 'open'),
+      orderBy('reportedAt', 'desc'),
+      limit(20)
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<Need[]>;
+  }
+
+  getTasksByVolunteer(volunteerId: string): Observable<Task[]> {
+    const tasksRef = collection(this.firestore, 'tasks');
+    const q = query(tasksRef, where('volunteerIds', 'array-contains', volunteerId));
+    return collectionData(q, { idField: 'id' }) as Observable<Task[]>;
+  }
 }
+

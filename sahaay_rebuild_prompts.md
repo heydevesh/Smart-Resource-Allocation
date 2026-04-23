@@ -6,13 +6,13 @@
 ## 2. Tech Stack & Architecture
 - **Frontend**: Angular 18 (standalone components, Signals), Angular Material / MDC, Google Maps JS API.
 - **Backend**: Firebase (Firestore, Auth with Phone/OTP, Storage, FCM, App Check), Firebase Extensions (Translate, Summarize, Multimodal).
-- **AI Layer**: Vertex AI Agent Engine (Gemini 2.0 Flash) accessed via a single Go-based Firebase Cloud Function (`CallAgent`).
-- **Agents**:
-  - `OrchestratorAgent`: Routes intents to specialist agents.
-  - `MatchAgent`: Matches volunteers to tasks based on skills, proximity, and availability.
-  - `SurgeAgent`: Predicts resource needs based on historical data.
-  - `NarratorAgent`: Writes human-centered donor reports.
-  - `QueryAgent`: Natural language Q&A over Firestore data.
+- **AI Layer**: Vertex AI Reasoning Engine (Gemini 2.0 Flash) accessed via a single Go-based Firebase Cloud Function (`CallAgent` - Deployed/Active using ReasoningEngineExecutionClient).
+- **Agents**: Orchestrated through a Multi-Agent Graph (Project: `sahaay-18eb3`, Region: `asia-south1`).
+  - `Orchestrator`: Entry point, routes intents.
+  - `MatchAgent`: Volunteer matching logic.
+  - `SurgeAgent`: Prediction logic.
+  - `NarratorAgent`: Reporting logic.
+  - `QueryAgent`: Q&A logic.
 
 ## 3. Global Design System Prompt
 *Prepend this block to any UI generation prompt to ensure consistency across the application.*
@@ -162,7 +162,7 @@ TOP BAR: "Command Center" subtitle, "Settings" title.
 SECTIONS:
 - Notifications: Slide toggles for "Critical Need Alerts" and "Volunteer Applications" with descriptions.
 - Appearance: Slide toggles for "Dark Mode" and "Default Map View" (Start with heatmap enabled).
-- Account: User profile card with avatar, Name, Role (Regional Coordinator), and an outlined red [Sign Out] button.
+- Account: User profile card with avatar, Name, Role (NGO Founder or Regional Coordinator), and an outlined red [Sign Out] button.
 ```
 
 ## 5. Core Role Ladder & User Journeys
@@ -175,6 +175,7 @@ Base roles:
 - **Volunteer** — verified user who can respond to needs and perform assigned work.
 - **Field Lead** — trusted volunteer who can coordinate a small local team.
 - **NGO Admin / Coordinator** — operational manager for one NGO.
+- **NGO Founder** — creator and legal owner of an NGO entity on the platform. Holds `manage_registry` permissions.
 - **Super Admin** — platform-wide manager across all NGOs and regions.
 
 ### 5.2 Permission Model Principles
@@ -197,23 +198,23 @@ Base roles:
 ### 6.1 Auth & Home
 - **Applicant**: Profile management only. Home shows "Application Under Review" teaser.
 - **Volunteer**: View own assignments, nearby opportunities, and active tasks. Can Accept/Decline.
-- **NGO Admin**: Full Mission Control. View all NGO metrics, confirm AI matches, process applications.
+- **NGO Admin / Founder**: Full Mission Control. View all NGO metrics, confirm AI matches, process applications.
 
 ### 6.2 Needs Map
 - **Volunteer**: View relevant nearby needs and own task routes. No heatmap or distribution layers.
 - **Field Lead**: View ward-level heatmap and volunteer proximity within their cluster.
-- **NGO Admin**: Full map control. Proximity rings, clusters, and "Assign from Map" capabilities.
+- **NGO Admin / Founder**: Full map control. Proximity rings, clusters, and "Assign from Map" capabilities.
 
 ### 6.3 Tasks & Volunteers
 - **Volunteer**: Update progress on assigned tasks. View/edit own profile only.
-- **NGO Admin**: CRUD access to all tasks. Full volunteer directory access including ID proof review and disciplinary notes.
+- **NGO Admin / Founder**: CRUD access to all tasks. Full volunteer directory access including ID proof review and disciplinary notes.
 
 ---
 
 ## 7. Implementation Roadmap: Role & Capability Keys
 
 ### 7.1 Role Keys
-- `applicant`, `volunteer`, `field_lead`, `ngo_admin`, `super_admin`
+- `applicant`, `volunteer`, `field_lead`, `ngo_admin`, `ngo_founder`, `super_admin`
 
 ### 7.2 Capability Flags (Permissions)
 - `view_home`, `view_map`, `view_tasks`, `create_task`, `assign_task`, `approve_volunteer`, `view_insights_ngo`, `manage_inventory`
@@ -224,156 +225,285 @@ Base roles:
 - Promoting users to Field Lead.
 - Resolving high-value inventory allocations.
 
-
-
-<!-- Update 1: Refined at 2026-04-21 22:45:16 -->
-
-<!-- Update 2: Refined at 2026-04-21 22:45:16 -->
-
-<!-- Update 3: Refined at 2026-04-21 22:45:16 -->
-
-<!-- Update 4: Refined at 2026-04-21 22:45:16 -->
-
-<!-- Update 5: Refined at 2026-04-21 22:45:17 -->
-
-<!-- Update 6: Refined at 2026-04-21 22:45:17 -->
-
-<!-- Update 7: Refined at 2026-04-21 22:45:17 -->
-
-<!-- Update 8: Refined at 2026-04-21 22:45:17 -->
-
-<!-- Update 9: Refined at 2026-04-21 22:45:17 -->
-
-<!-- Update 10: Refined at 2026-04-21 22:45:17 -->
-
-<!-- Update 11: Refined at 2026-04-21 22:45:17 -->
-
-<!-- Update 12: Refined at 2026-04-21 22:45:18 -->
-
-<!-- Update 13: Refined at 2026-04-21 22:45:18 -->
-
-<!-- Update 14: Refined at 2026-04-21 22:45:18 -->
-
-<!-- Update 15: Refined at 2026-04-21 22:45:18 -->
-
-<!-- Update 16: Refined at 2026-04-21 22:45:18 -->
-
-<!-- Update 17: Refined at 2026-04-21 22:45:18 -->
-
-<!-- Update 18: Refined at 2026-04-21 22:45:18 -->
-
-<!-- Update 19: Refined at 2026-04-21 22:45:19 -->
-
-<!-- Update 20: Refined at 2026-04-21 22:45:19 -->
-
-<!-- Update 21: Refined at 2026-04-21 22:45:19 -->
-
-<!-- Update 22: Refined at 2026-04-21 22:45:19 -->
-
-<!-- Update 23: Refined at 2026-04-21 22:45:19 -->
-
-<!-- Update 24: Refined at 2026-04-21 22:45:19 -->
-
-<!-- Update 25: Refined at 2026-04-21 22:45:19 -->
-
-<!-- Update 26: Refined at 2026-04-21 22:45:20 -->
-
-<!-- Update 27: Refined at 2026-04-21 22:45:20 -->
-
-<!-- Update 28: Refined at 2026-04-21 22:45:20 -->
-
-<!-- Update 29: Refined at 2026-04-21 22:45:20 -->
-
-<!-- Update 30: Refined at 2026-04-21 22:45:20 -->
-
-<!-- Update 31: Refined at 2026-04-21 22:45:20 -->
-
-<!-- Update 32: Refined at 2026-04-21 22:45:20 -->
-
-<!-- Update 33: Refined at 2026-04-21 22:45:20 -->
-
-<!-- Update 34: Refined at 2026-04-21 22:45:21 -->
-
-<!-- Update 35: Refined at 2026-04-21 22:45:21 -->
-
-<!-- Update 36: Refined at 2026-04-21 22:45:21 -->
-
-<!-- Update 37: Refined at 2026-04-21 22:45:21 -->
-
-<!-- Update 38: Refined at 2026-04-21 22:45:21 -->
-
-<!-- Update 39: Refined at 2026-04-21 22:45:21 -->
-
-<!-- Update 40: Refined at 2026-04-21 22:45:21 -->
-
-<!-- Update 1: Refined at 2026-04-21 23:44:23 -->
-
-<!-- Update 2: Refined at 2026-04-21 23:44:23 -->
-
-<!-- Update 3: Refined at 2026-04-21 23:44:23 -->
-
-<!-- Update 4: Refined at 2026-04-21 23:44:24 -->
-
-<!-- Update 5: Refined at 2026-04-21 23:44:24 -->
-
-<!-- Update 6: Refined at 2026-04-21 23:44:24 -->
-
-<!-- Update 7: Refined at 2026-04-21 23:44:24 -->
-
-<!-- Update 8: Refined at 2026-04-21 23:44:24 -->
-
-<!-- Update 9: Refined at 2026-04-21 23:44:24 -->
-
-<!-- Update 10: Refined at 2026-04-21 23:44:24 -->
-
-<!-- Update 11: Refined at 2026-04-21 23:44:25 -->
-
-<!-- Update 12: Refined at 2026-04-21 23:44:25 -->
-
-<!-- Update 13: Refined at 2026-04-21 23:44:25 -->
-
-<!-- Update 18: Refined at 2026-04-21 23:44:25 -->
-
-<!-- Update 19: Refined at 2026-04-21 23:44:26 -->
-
-<!-- Update 20: Refined at 2026-04-21 23:44:26 -->
-
-<!-- Update 21: Refined at 2026-04-21 23:44:26 -->
-
-<!-- Update 22: Refined at 2026-04-21 23:44:26 -->
-
-<!-- Update 23: Refined at 2026-04-21 23:44:26 -->
-
-<!-- Update 24: Refined at 2026-04-21 23:44:26 -->
-
-<!-- Update 25: Refined at 2026-04-21 23:44:26 -->
-
-<!-- Update 26: Refined at 2026-04-21 23:44:26 -->
-
-<!-- Update 27: Refined at 2026-04-21 23:44:27 -->
-
-<!-- Update 28: Refined at 2026-04-21 23:44:27 -->
-
-<!-- Update 29: Refined at 2026-04-21 23:44:27 -->
-
-<!-- Update 30: Refined at 2026-04-21 23:44:27 -->
-
-<!-- Update 31: Refined at 2026-04-21 23:44:27 -->
-
-<!-- Update 32: Refined at 2026-04-21 23:44:27 -->
-
-<!-- Update 33: Refined at 2026-04-21 23:44:27 -->
-
-<!-- Update 34: Refined at 2026-04-21 23:44:28 -->
-
-<!-- Update 35: Refined at 2026-04-21 23:44:28 -->
-
-<!-- Update 36: Refined at 2026-04-21 23:44:28 -->
-
-<!-- Update 37: Refined at 2026-04-21 23:44:28 -->
-
-<!-- Update 38: Refined at 2026-04-21 23:44:28 -->
-
-<!-- Update 39: Refined at 2026-04-21 23:44:28 -->
-
-<!-- Update 40: Refined at 2026-04-21 23:44:28 -->
+---
+
+## 8. Auth & Registration Flow
+
+### 8.1 Login Screen (Email + Google OAuth)
+```text
+Design a login screen for Sahaay NGO app. Full-screen, responsive web, premium feel.
+
+BACKGROUND: Deep teal to dark #0A6B5E to #054035 gradient, full screen. Subtle pattern: very faint circular rings (SVG, white 3% opacity) like a ripple.
+
+LOGO SECTION (top 35%, centered):
+- Large circular icon 80px — white bg, teal volunteer_activism icon
+- "Sahaay" DM Serif Display 40px white
+- "सहाय" 20px white 60% opacity
+- "NGO Coordination Platform" 13px white 50% opacity
+
+BOTTOM CARD (white, radius 28px top, padding 28px):
+Title: "Welcome back" DM Serif 22px
+Email input: full width, mat-form-field, prefix mail icon
+Password input: full width, mat-form-field, prefix lock icon, visibility toggle suffix
+[Sign In] button — full width, teal bg, white text, radius 9px
+Divider: — or —
+[Continue with Google] white outline button with Google icon
+BOTTOM: "New here? Create an account" link to /register
+
+AUTHENTICATION: Firebase Auth with email/password + Google OAuth popup.
+On successful login, check Firestore 'users/{uid}':
+  - If user doc exists with isRegistered=true → navigate to /home
+  - If no user doc or isRegistered=false → redirect to /register for profile completion
+```
+
+### 8.2 Registration Flow (3-Step Form)
+```text
+Design a 3-step registration form for Sahaay. Same ambient gradient background as login.
+
+STEP INDICATOR: Horizontal dots with connecting lines. States: done (✓ green), active (teal), pending (grey).
+Steps: [Personal] → [Role & Skills] → [Verification]
+
+STEP 1 — Personal Info:
+- Full Name (mat-input, required)
+- Phone Number (mat-input, required)
+- Date of Birth (mat-input, date picker)
+- Gender (mat-select: Male, Female, Other)
+- Address / Location (mat-input)
+
+STEP 2 — Role & Skills:
+- Preferred Role (4 clickable cards: Volunteer, Field Lead, NGO Admin, NGO Founder) — each with icon + subtitle
+- Ward / Region (mat-select: Dharavi, Kurla, Govandi, Bhandup)
+- Skills (comma-separated mat-input)
+- Languages Spoken (comma-separated mat-input)
+- NGO Affiliation (optional mat-input)
+
+STEP 3 — Identity Verification:
+- Aadhaar Card Upload (drag-drop zone, accepts image files)
+  - On upload: Tesseract.js OCR auto-extracts Aadhaar number → auto-fills input
+  - Shows OCR confidence badge (green ≥70%, amber <70%)
+- Selfie Upload (drag-drop zone)
+  - On upload: face-api.js compares selfie vs Aadhaar photo
+  - Shows face match badge (green "Match 94%" or red "Mismatch")
+- MatProgressBar during processing
+- Status text updates ("Reading Aadhaar card...", "Matching faces...", etc.)
+
+SUBMIT: Creates Firestore doc at 'users/{uid}' with all fields + faceMatchConfidence + ocrConfidence.
+Role defaults to 'applicant', verificationStatus to 'pending'.
+
+BOTTOM: "Already registered? Sign in" link to /auth
+```
+
+---
+
+## 9. Identity Verification Pipeline
+
+### 9.1 Architecture (Hybrid: Client + Cloud)
+```
+┌─────────────────────────────────────────────────────────┐
+│  LAYER 1: Tesseract.js (Client-side, free, unlimited)   │
+│  - OCR on Aadhaar card image                            │
+│  - Extracts: Aadhaar number, DOB, gender                │
+│  - Auto-fills registration form fields                  │
+├─────────────────────────────────────────────────────────┤
+│  LAYER 2: Cloud Vision API (Cloud Function, free tier)  │
+│  - Face detection + quality check on selfie             │
+│  - Validates: blur, headwear, face count                │
+│  - Currently DISABLED (CLOUD_VISION_ENABLED = false)    │
+│  - Enable when DetectFace Cloud Function is deployed    │
+├─────────────────────────────────────────────────────────┤
+│  LAYER 3: face-api.js (Client-side, free, unlimited)    │
+│  - TinyFaceDetector + FaceLandmark68 + FaceRecognition  │
+│  - 128-dim face descriptors                             │
+│  - Euclidean distance < 0.6 = match                     │
+│  - Confidence = max(0, (1 - distance/0.8)) × 100       │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 9.2 Key Files
+| File | Purpose |
+|------|---------|
+| `src/app/core/verification/verification.service.ts` | Central service: OCR, face detection, face matching |
+| `functions/go/verification/face_detect.go` | Go Cloud Function wrapping Cloud Vision API |
+| `src/assets/models/face-api/` | Neural network weights (TinyFaceDetector, FaceLandmark68, FaceRecognition) |
+| `src/app/auth/register/register.component.ts` | 3-step registration with live verification UI |
+
+### 9.3 Dependencies
+```json
+{
+  "face-api.js": "client-side face matching (128-dim descriptors)",
+  "tesseract.js": "client-side Aadhaar OCR (eng+hin)",
+  "Cloud Vision API": "server-side face detection (free 1000/month, currently disabled)"
+}
+```
+
+### 9.4 Angular Config (angular.json)
+Face-api.js model weights require `src/assets` mapped to output `assets` in angular.json:
+```json
+"assets": [
+  { "glob": "**/*", "input": "public" },
+  { "glob": "**/*", "input": "src/assets", "output": "assets" }
+]
+```
+
+---
+
+## 10. Data Models
+
+### 10.1 User Model (`models/user.model.ts`)
+```typescript
+export type UserRole = 'applicant' | 'volunteer' | 'field_lead' | 'ngo_admin' | 'ngo_founder' | 'super_admin';
+
+export interface User {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  permissions?: Permission[];
+  region?: string;
+  photoURL?: string;
+  verificationStatus?: 'pending' | 'shortlisted' | 'rejected' | 'approved';
+  phone?: string;
+  skills?: string[];
+  idProofUrl?: string;
+  availability?: string;
+
+  // Registration & KYC fields
+  aadhaarNumber?: string;
+  faceVerified?: boolean;
+  facePhotoUrl?: string;
+  faceMatchConfidence?: number;  // 0-100, from face-api.js
+  ocrConfidence?: number;        // 0-100, from Tesseract.js
+  languages?: string[];
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other';
+  address?: string;
+  ngoAffiliation?: string;
+  registrationCompletedAt?: any;
+  isRegistered?: boolean;
+}
+```
+
+### 10.2 Permission Model
+```typescript
+export type Permission =
+  | 'view_home' | 'view_map' | 'view_tasks'
+  | 'create_task' | 'create_need' | 'assign_task'
+  | 'update_own_task' | 'update_team_task'
+  | 'view_own_profile' | 'update_own_profile'
+  | 'view_team_profiles' | 'view_all_volunteers'
+  | 'approve_volunteer' | 'promote_volunteer'
+  | 'view_insights_own' | 'view_insights_team' | 'view_insights_ngo'
+  | 'view_registry' | 'manage_registry'
+  | 'view_inventory' | 'request_inventory' | 'manage_inventory'
+  | 'manage_ngo_settings' | 'manage_platform_settings'
+  | 'view_application_status';
+```
+
+### 10.3 Seeded Test Accounts (Firestore `users` collection)
+| Email | Password | Role | Region |
+|-------|----------|------|--------|
+| admin@sahaay.org | Admin@123 | ngo_admin | Dharavi |
+| founder@sahaay.org | Founder@123 | ngo_founder | Dharavi |
+| fieldlead@sahaay.org | Field@123 | field_lead | Kurla |
+| volunteer@sahaay.org | Vol@123 | volunteer | Govandi |
+
+---
+
+## 11. Directory Structure (Current)
+
+```
+sahaay/
+├── src/app/
+│   ├── core/
+│   │   ├── ai/agent.service.ts           # Vertex AI Agent Engine bridge
+│   │   ├── auth/
+│   │   │   ├── auth.service.ts           # Firebase Auth (email + Google OAuth)
+│   │   │   └── role.guard.ts             # Role-based route guards
+│   │   ├── firebase/
+│   │   │   ├── firestore.service.ts      # Firestore CRUD + real-time listeners
+│   │   │   ├── storage.service.ts        # Firebase Storage uploads
+│   │   │   └── fcm.service.ts            # Push notifications
+│   │   ├── maps/
+│   │   │   ├── maps.service.ts           # Google Maps JS API
+│   │   │   └── geolocation.service.ts    # Browser geolocation
+│   │   └── verification/
+│   │       └── verification.service.ts   # OCR + face detection + face matching
+│   ├── auth/
+│   │   ├── login/login.component.ts      # Email/password + Google OAuth
+│   │   └── register/register.component.ts # 3-step registration + verification
+│   ├── features/
+│   │   ├── home/                         # Mission Control dashboard
+│   │   ├── needs-map/                    # Google Maps with need pins + heatmap
+│   │   ├── tasks/                        # Task CRUD + Kanban
+│   │   ├── volunteers/                   # Volunteer directory + approval queue
+│   │   ├── insights/                     # Analytics + AI reports
+│   │   ├── ngo-registry/                 # Partner NGO directory
+│   │   ├── resource-vault/               # Inventory management
+│   │   ├── settings/                     # App settings
+│   │   └── verification-status/          # Applicant verification status view
+│   ├── models/
+│   │   ├── user.model.ts
+│   │   ├── need.model.ts
+│   │   ├── task.model.ts
+│   │   ├── volunteer.model.ts
+│   │   ├── ai-match.model.ts
+│   │   └── index.ts                      # Barrel export
+│   ├── shared/components/                # Reusable UI: stat-card, task-card, etc.
+│   ├── app.routes.ts                     # Lazy-loaded routes with role guards
+│   └── app.config.ts                     # Firebase + Angular providers
+│
+├── functions/go/
+│   ├── agents/orchestrator.go            # CallAgent Cloud Function
+│   ├── config/agents.go                  # Vertex AI agent resource IDs
+│   ├── verification/face_detect.go       # DetectFace Cloud Function (Cloud Vision)
+│   └── middleware/auth.go                # Firebase token verification
+│
+├── src/assets/models/face-api/           # face-api.js neural network weights
+├── angular.json                          # Build config (assets mapping for models)
+├── firebase.json
+├── firestore.rules
+├── AGENTS.md                             # Full architecture spec
+└── sahaay_rebuild_prompts.md             # This file
+```
+
+---
+
+## 12. Current Implementation Status
+
+| Status | Feature |
+|--------|---------|
+| ✅ | Login (email/password + Google OAuth) |
+| ✅ | 3-step Registration flow (Personal → Role → Verification) |
+| ✅ | Aadhaar OCR via Tesseract.js (client-side) |
+| ✅ | Face matching via face-api.js (client-side) |
+| ✅ | Cloud Vision API Cloud Function (written, not deployed) |
+| ✅ | Home dashboard with real-time Firestore data |
+| ✅ | Needs Map with Google Maps pins + heatmap |
+| ✅ | Tasks tab with CRUD + status lifecycle |
+| ✅ | Volunteers tab with approval queue |
+| ✅ | Insights tab with charts + AI narrative |
+| ✅ | NGO Registry (Partner Directory) |
+| ✅ | Resource Vault (Inventory) |
+| ✅ | Settings screen |
+| ✅ | Role-based guards + permission model |
+| ✅ | Skeleton loaders for data fetching |
+| ✅ | Material Symbols Rounded icons (globally) |
+| ⏳ | Deploy DetectFace Cloud Function (then set CLOUD_VISION_ENABLED = true) |
+| ✅ | Deploy CallAgent Cloud Function to GCP (Reasoning Engine Integration) |
+| ⏳ | Firebase App Check (reCAPTCHA v3) |
+| ⏳ | FCM push notifications for critical needs |
+| ⏳ | Offline persistence (IndexedDB) |
+| ⏳ | DigiLocker API integration (production KYC) |
+
+---
+
+## 13. Known Issues & Workarounds
+
+| Issue | Cause | Workaround |
+|-------|-------|------------|
+| Google Maps "InvalidKey" warning | No real API key in environment config | Add key to `src/environments/environment.ts` |
+| Tesseract.js "Parameter not found" warnings | Internal WASM engine messages | Harmless — safe to ignore |
+| Cross-Origin-Opener-Policy warnings | Google OAuth popup behavior in Chrome | Harmless — standard Firebase Auth behavior |
+| DetectFace CORS errors | Cloud Function not deployed | `CLOUD_VISION_ENABLED = false` skips the call |
+
+<!-- Last updated: 2026-04-22T01:53:00+05:30 -->

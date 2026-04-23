@@ -2,9 +2,8 @@ package tools
 
 import (
 	"context"
-	"fmt"
 	"math"
-	"sahaay/functions/config"
+	"sahaay.io/functions/config"
 
 	"cloud.google.com/go/firestore"
 )
@@ -39,7 +38,6 @@ func SearchVolunteers(ctx context.Context, skill string, lat, lng float64, radiu
 	// Simplistic bounding box query (real apps use GeoFirestore or S2 cells)
 	// 1 degree lat is ~111km
 	latDelta := radiusKm / 111.0
-	lngDelta := radiusKm / (111.0 * math.Cos(lat*math.Pi/180.0))
 
 	iter := client.Collection("volunteers").
 		Where("available", "==", true).
@@ -55,9 +53,12 @@ func SearchVolunteers(ctx context.Context, skill string, lat, lng float64, radiu
 	var results []map[string]any
 	for _, doc := range docs {
 		data := doc.Data()
-		vLat := data["lat"].(float64)
-		vLng := data["lng"].(float64)
-		
+		vLat, latOk := data["lat"].(float64)
+		vLng, lngOk := data["lng"].(float64)
+		if !latOk || !lngOk {
+			continue // skip invalid documents
+		}
+
 		// Refine with exact distance
 		dist := haversine(lat, lng, vLat, vLng)
 		if dist <= radiusKm {
