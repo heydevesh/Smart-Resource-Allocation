@@ -507,3 +507,5 @@ sahaay/
 | DetectFace CORS errors | Cloud Function not deployed | `CLOUD_VISION_ENABLED = false` skips the call |
 
 <!-- Last updated: 2026-04-22T01:53:00+05:30 -->
+
+<!-- Update 1: Refined at 2026-04-24 13:54:42 -->
