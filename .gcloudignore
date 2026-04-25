@@ -1,0 +1,17 @@
+.gcloudignore
+.git
+.gitignore
+node_modules
+.angular
+src
+e2e
+functions
+package.json
+package-lock.json
+tsconfig.json
+angular.json
+
+# Allow dist and config files
+!dist/sahaay/browser
+!nginx.conf
+!Dockerfile
