@@ -18,16 +18,18 @@ import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader
 import { computed } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { User } from '../../models';
+import { of } from 'rxjs';
+import { filter, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-volunteers',
   standalone: true,
   imports: [
-    CommonModule, 
-    MatIconModule, 
-    MatButtonModule, 
-    MatChipsModule, 
-    VolunteerCardComponent, 
+    CommonModule,
+    MatIconModule,
+    MatButtonModule,
+    MatChipsModule,
+    VolunteerCardComponent,
     MatDialogModule,
     MatTabsModule,
     MatSnackBarModule,
@@ -64,13 +66,13 @@ import { User } from '../../models';
               @if (isLoading()) {
                 <app-skeleton-loader variant="volunteer-card" [count]="4"></app-skeleton-loader>
               } @else {
-                <app-volunteer-card 
-                  *ngFor="let vol of filteredVolunteers()" 
+                <app-volunteer-card
+                  *ngFor="let vol of filteredVolunteers()"
                   [volunteer]="vol"
                   [match]="getMatchFor(vol.id)"
                   (cardClick)="handleVolunteerClick($event)">
                 </app-volunteer-card>
-                
+
                 <div class="empty-state" *ngIf="filteredVolunteers().length === 0">
                   <mat-icon>no_accounts</mat-icon>
                   <p>No verified volunteers in this sector.</p>
@@ -140,7 +142,7 @@ import { User } from '../../models';
       font-size: 0.9rem;
       color: var(--color-text-secondary);
     }
-    
+
     .ai-action-card {
       background: linear-gradient(135deg, var(--color-primary-light), var(--color-card));
       border: 1px solid var(--color-primary);
@@ -168,7 +170,7 @@ import { User } from '../../models';
       font-size: 0.85rem;
       color: var(--color-text-secondary);
     }
-    
+
     .tab-content {
       padding: 24px 0;
     }
@@ -176,7 +178,7 @@ import { User } from '../../models';
       --mdc-tab-indicator-active-indicator-color: var(--color-primary);
       --mat-tab-header-active-label-text-color: var(--color-primary);
     }
-    
+
     .applicant-list {
       display: flex;
       flex-direction: column;
@@ -227,11 +229,26 @@ export class VolunteersComponent implements OnInit {
   private searchService = inject(SearchService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
-  
+
   user = toSignal(this.auth.currentUser$);
   volunteers = toSignal(this.firestoreService.getAllVolunteers(), { initialValue: [] });
-  applicants = toSignal(this.firestoreService.getApplicants(), { initialValue: [] });
-  
+  applicants = toSignal(
+    this.auth.currentUser$.pipe(
+      filter((currentUser): currentUser is User | null => currentUser !== undefined),
+      switchMap((currentUser) => {
+        const canReviewApplicants =
+          currentUser?.role === 'ngo_admin' ||
+          currentUser?.role === 'ngo_founder' ||
+          currentUser?.role === 'super_admin';
+
+        return canReviewApplicants
+          ? this.firestoreService.getApplicants()
+          : of([] as User[]);
+      }),
+    ),
+    { initialValue: [] as User[] },
+  );
+
   searchTerm = this.searchService.searchTerm;
   matches = signal<VolunteerMatch[]>([]);
   showMatcher = signal<boolean>(true);
@@ -245,7 +262,7 @@ export class VolunteersComponent implements OnInit {
   filteredVolunteers = computed(() => {
     let all = this.volunteers();
     const currentUser = this.user();
-    
+
     // Filter by region if not super_admin
     if (currentUser && currentUser.role !== 'super_admin' && currentUser.region) {
       all = all.filter(v => v.region === currentUser.region);
@@ -253,8 +270,8 @@ export class VolunteersComponent implements OnInit {
 
     const search = this.searchTerm().toLowerCase();
     if (!search) return all;
-    return all.filter(v => 
-      v.name.toLowerCase().includes(search) || 
+    return all.filter(v =>
+      v.name.toLowerCase().includes(search) ||
       v.skills.some(s => s.toLowerCase().includes(search))
     );
   });
@@ -262,7 +279,7 @@ export class VolunteersComponent implements OnInit {
   filteredApplicants = computed(() => {
     let all = this.applicants();
     const currentUser = this.user();
-    
+
     // Filter by region if not super_admin
     if (currentUser && currentUser.role !== 'super_admin' && currentUser.region) {
       all = all.filter(a => a.region === currentUser.region);
@@ -343,12 +360,12 @@ export class VolunteersComponent implements OnInit {
   async runMatch() {
     // In a real app, this would use a selected Task.
     const mockTask: Task = {
-      id: 'mock', title: 'Medical emergency', category: 'medical', priority: 'critical', 
-      volunteerIds: [], status: 'pending', progress: 0, dueAt: new Date() as any, 
+      id: 'mock', title: 'Medical emergency', category: 'medical', priority: 'critical',
+      volunteerIds: [], status: 'pending', progress: 0, dueAt: new Date() as any,
       createdBy: 'sys', createdAt: new Date() as any, recurring: false, attachmentUrls: [],
       description: 'Need first aid immediately', locationLat: 19.0380, locationLng: 72.8538, locationName: 'Dharavi'
     };
-    
+
     // Use the backend AI agent
     try {
       // NOTE: This will fail until backend configuration (agents.go) is set with real Vertex IDs
