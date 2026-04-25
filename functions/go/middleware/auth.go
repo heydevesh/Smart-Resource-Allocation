@@ -3,21 +3,36 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	"sahaay.io/functions/config"
 )
 
 var authClient *auth.Client
 
 func init() {
-	app, _ := firebase.NewApp(context.Background(), nil)
-	authClient, _ = app.Auth(context.Background())
+	ctx := context.Background()
+	app, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: config.Project})
+	if err != nil {
+		log.Printf("[AUTH] Failed to initialize Firebase app: %v", err)
+		return
+	}
+
+	authClient, err = app.Auth(ctx)
+	if err != nil {
+		log.Printf("[AUTH] Failed to initialize Firebase auth client: %v", err)
+	}
 }
 
 func VerifyIDToken(r *http.Request) (string, error) {
+	if authClient == nil {
+		return "", fmt.Errorf("auth client not initialized")
+	}
+
 	header := r.Header.Get("Authorization")
 	if !strings.HasPrefix(header, "Bearer ") {
 		return "", fmt.Errorf("missing Bearer token")
