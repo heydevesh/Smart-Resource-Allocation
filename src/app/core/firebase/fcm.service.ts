@@ -35,6 +35,11 @@ export class FcmService implements OnDestroy {
 
   async init() {
     try {
+      if (!("Notification" in window)) {
+        console.warn('FCM: Notifications are not supported in this browser.');
+        return;
+      }
+
       // Check current permission state
       this.permissionStatus.set(Notification.permission);
 
@@ -85,8 +90,22 @@ export class FcmService implements OnDestroy {
   /** Fetch FCM token and persist to Firestore user profile */
   private async fetchAndStoreToken(): Promise<void> {
     try {
+      if (!environment.vapidKey || environment.vapidKey.startsWith('REPLACE_')) {
+        console.warn('FCM: VAPID key is not configured. Skipping token fetch.');
+        return;
+      }
+
+      if (!("serviceWorker" in navigator)) {
+        console.warn('FCM: Service workers are not supported in this browser.');
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      await navigator.serviceWorker.ready;
+
       const token = await getToken(this.messaging, {
-        vapidKey: environment.vapidKey
+        vapidKey: environment.vapidKey,
+        serviceWorkerRegistration: registration,
       });
 
       if (token) {
