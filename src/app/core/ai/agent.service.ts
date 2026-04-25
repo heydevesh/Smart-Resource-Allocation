@@ -26,6 +26,14 @@ interface AgentResponse<T> {
   agentUsed: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function hasResultField<T>(value: unknown): value is { result: T } {
+  return isRecord(value) && "result" in value;
+}
+
 @Injectable({ providedIn: "root" })
 export class AgentService {
   private fns = inject(Functions);
@@ -38,9 +46,13 @@ export class AgentService {
 
   private dispatch<T>(intent: AgentIntent, payload: Record<string, unknown>) {
     const sessionId = this.auth.currentUser?.uid ?? "anon";
-    return this.call({ intent, payload, sessionId }).then(
-      (r) => r.data.result as T,
-    );
+    return this.call({ intent, payload, sessionId }).then((r) => {
+      const responseData: unknown = r.data;
+      if (hasResultField<T>(responseData)) {
+        return responseData.result;
+      }
+      return responseData as T;
+    });
   }
 
   matchVolunteers(task: Task, volunteers: Volunteer[]) {
