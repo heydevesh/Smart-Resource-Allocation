@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { Need, Task, VolunteerMatch, Activity } from '../../models';
+import { Need, Task, VolunteerMatch, Activity, WeeklyStats } from '../../models';
 import { FirestoreService } from '../../core/firebase/firestore.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { AgentService } from '../../core/ai/agent.service';
@@ -589,15 +589,21 @@ export class HomeComponent implements OnInit {
   async generateAiNarrative() {
     this.aiLoading.set(true);
     try {
-      const response = await this.agentService.narrateReport({
-        needs: this.recentNeeds().length,
-        tasks: this.activeTasks().length,
-        volunteers: this.availableVolunteers().length,
-        resolved: this.resolvedTodayCount()
-      } as any);
+      const topCategories = this.getTopNeedCategories();
+      const stats: WeeklyStats = {
+        week: new Date().toISOString().slice(0, 10),
+        tasksCompleted: this.resolvedTodayCount(),
+        criticalNeedsResolved: this.allTasks().filter(
+          (task) => task.priority === 'critical' && task.status === 'completed',
+        ).length,
+        volunteersActive: this.availableVolunteers().length,
+        topCategories,
+      };
+
+      const response = await this.agentService.narrateReport(stats);
 
       if (typeof response === 'object' && response !== null && 'narrative' in response) {
-        this.aiNarrative.set((response as any).narrative);
+        this.aiNarrative.set(String((response as { narrative: unknown }).narrative));
       } else if (typeof response === 'string') {
         this.aiNarrative.set(response);
       }
@@ -609,6 +615,21 @@ export class HomeComponent implements OnInit {
   }
 
   firstName = computed(() => this.user()?.displayName?.split(' ')[0] || 'Rahul');
+
+  private getTopNeedCategories(): string[] {
+    const counts = this.recentNeeds().reduce<Record<string, number>>((accumulator, need) => {
+      const current = accumulator[need.category] ?? 0;
+      accumulator[need.category] = current + 1;
+      return accumulator;
+    }, {});
+
+    const rankedCategories = Object.entries(counts)
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 3)
+      .map(([category]) => category);
+
+    return rankedCategories.length > 0 ? rankedCategories : ['medical', 'food'];
+  }
 
   getTimeAgo(timestamp: any): string {
     if (!timestamp) return '';
