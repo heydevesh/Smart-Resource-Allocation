@@ -1,5 +1,6 @@
 import { Component, inject, signal, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -10,6 +11,7 @@ import { AgentService } from '../../../core/ai/agent.service';
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  safeContent?: SafeHtml;
 }
 
 @Component({
