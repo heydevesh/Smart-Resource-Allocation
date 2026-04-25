@@ -1,79 +1,117 @@
-# Sahaay AI Agent Architecture
+# Sahaay (सहाय) — Smart Resource Allocation for Mumbai NGOs
 
-This document explains the multi-agent system architecture, its communication flow, and the operational logic for each specialist agent.
+Sahaay is a mobile-first, offline-capable platform designed to streamline humanitarian efforts in Mumbai. It connects field workers, volunteers, and NGO administrators through a real-time coordination layer powered by Vertex AI and secured by Aadhaar-linked identity verification.
 
-## 1. System Overview
+---
 
-Sahaay uses a **Federated Multi-Agent Graph** architecture. Instead of multiple disconnected AI models, we use a single entry-point (Orchestrator) within Vertex AI that delegates to specialized nodes.
+## 🚀 The Mission
 
+**Problem:** NGOs in high-density areas like Dharavi, Kurla, and Govandi manage critical needs via fragmented WhatsApp groups and paper logs. Manual volunteer matching is slow, and surge needs (monsoon floods, medical spikes) are often reactive rather than predictive.
+
+**Solution:** A unified operational dashboard featuring:
+- **Real-time Needs Map:** Live tracking of food, medical, and shelter needs with heatmaps.
+- **AI-Powered Matching:** Vertex AI agents that rank volunteers based on proximity, skills, and availability.
+- **Identity Trust:** Secure NGO and volunteer onboarding using Aadhaar KYC and Face Matching.
+- **Surge Prediction:** Predictive analytics for anticipated resource spikes in specific Mumbai clusters.
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **Frontend** | Angular 18 (Signals, Standalone, Material 3) |
+| **Backend** | Go (Cloud Functions), Firebase (Auth, Firestore, Storage) |
+| **Intelligence** | Vertex AI Agent Engine (Gemini 2.0 Flash) |
+| **Security** | Firebase App Check (reCAPTCHA v3), Identity Verification (Aadhaar OCR) |
+| **Maps** | Google Maps JS API (Heatmaps, Proximity Rings) |
+
+---
+
+## 📂 Architecture Overview
+
+Sahaay uses a **Federated Multi-Agent Graph** architecture. All critical logic (AI, Identity, Security) is centralized in Go Cloud Functions to prevent client-side tampering.
+
+### System Flow
 ```mermaid
 graph TD
-    A[Angular Dashboard] -- HTTPS Callable --> B[Firebase Cloud Function <br/><i>Go / CallAgent</i>]
+    A[Angular Dashboard] -- HTTPS Callable --> B[Go Cloud Functions]
     B -- Auth Verification --> C[Firebase Auth]
-    B -- QueryAgent API --> D[Vertex AI Agent Engine]
+    B -- AI Intents --> D[Vertex AI Agent Engine]
+    B -- Identity Verification --> E[Google Vision AI]
     
-    subgraph Vertex AI Graph [Resource: agent_1776845357201]
-        D --> E{Orchestrator}
-        E -- intent: MATCH_VOLUNTEERS --> F[MatchAgent]
-        E -- intent: PREDICT_SURGE --> G[SurgeAgent]
-        E -- intent: NARRATE_REPORT --> H[NarratorAgent]
-        E -- intent: QUERY_ASSISTANT --> I[QueryAgent]
+    subgraph Vertex AI Graph
+        D --> F{Orchestrator}
+        F -- MATCH_VOLUNTEERS --> G[MatchAgent]
+        F -- PREDICT_SURGE --> H[SurgeAgent]
+        F -- NARRATE_REPORT --> I[NarratorAgent]
+        F -- QUERY_ASSISTANT --> J[QueryAgent]
     end
     
-    F --> J[Volunteer Matching Result]
-    G --> K[Surge Prediction JSON]
-    H --> L[Donor Narrative]
-    I --> M[Natural Language Answer]
-    
-    J & K & L & M --> B
-    B --> A
+    B --> K[Firestore / Storage]
+    K -- Real-time Sync --> A
 ```
 
 ---
 
-## 2. Request Lifecycle (Sequence)
+## 🛠 Getting Started
 
-```mermaid
-sequenceDiagram
-    participant User as User (Coordinator)
-    participant App as Angular App
-    participant GCF as Go Cloud Function
-    participant VAI as Vertex AI (agent_1776845357201)
-    
-    User->>App: Click "Run Matching"
-    App->>App: Collect Task + Volunteers context
-    App->>GCF: httpsCallable("CallAgent", {intent: "MATCH_VOLUNTEERS", payload: {...}})
-    GCF->>GCF: Verify Firebase ID Token
-    GCF->>VAI: QueryAgent(intent, payload)
-    VAI->>VAI: Route to MatchAgent Node
-    VAI-->>GCF: Returns JSON Result
-    GCF-->>App: Returns AgentResponse
-    App->>User: Re-render UI with Smart Matches
-```
+### Prerequisites
+- Node.js v18+
+- Go 1.21+
+- Firebase CLI
+- Google Cloud SDK
 
----
+### Local Development
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/89Aman/Smart-Resource-Allocation.git
+   cd Smart-Resource-Allocation
+   ```
 
-## 3. Agent Trigger Matrix
+2. **Frontend Setup:**
+   ```bash
+   npm install
+   ng serve
+   ```
 
-| Agent | Intent | Triggered When... | Input Context | Output Format |
-| :--- | :--- | :--- | :--- | :--- |
-| **MatchAgent** | `MATCH_VOLUNTEERS` | Coordinator clicks "Smart Match" in Task/Volunteer tab. | `{ task, volunteers }` | `VolunteerMatch[]` (JSON) |
-| **SurgeAgent** | `PREDICT_SURGE` | Insights tab is loaded or region is changed. | `{ region, historicalData }` | `SurgePrediction[]` (JSON) |
-| **NarratorAgent** | `NARRATE_REPORT` | Coordinator clicks "Generate Report" in Insights. | `{ stats: WeeklyStats }` | `{ narrative, headline }` |
-| **QueryAgent** | `QUERY_ASSISTANT` | User types in the AI Coordinator Chat (Sidenav). | `{ question, dashboardContext }` | `string` (Plain English) |
+3. **Backend Setup:**
+   ```bash
+   cd functions/go
+   go mod tidy
+   # Deploy functions (see AGENTS.md for details)
+   ```
 
 ---
 
-## 4. Operational Logic
+## 🛡 Security & Compliance
 
-### Orchestration Logic
-The **Go Cloud Function** acts as the secure bridge. It:
-1. **Authenticates**: Ensures only logged-in NGO staff can call the AI.
-2. **Standardizes**: Wraps the frontend payload into the format expected by Vertex AI.
-3. **Monitors**: Logs latency and intent usage for Cloud Trace.
+Sahaay implements strict security protocols:
+1. **Identity Verification:** All NGO founders and volunteers must pass Aadhaar-linked KYC.
+2. **App Check:** Enforced at the infrastructure level to block unauthorized API traffic.
+3. **Role-Based Access:** Granular permissions for Field Workers, Volunteers, Admins, and Founders.
+4. **Data Sovereignty:** Firestore security rules ensure data is only accessible to authorized organizational members.
 
-### Specialist Logic
-- **MatchAgent**: Uses a weighted scoring algorithm (Skill 40%, Proximity 30%, Availability 20%, Rating 10%) to rank candidates.
-- **SurgeAgent**: Analyzes the last 8 weeks of Firestore `needs` data, factoring in seasonal patterns (like Monsoon) for Mumbai.
-- **NarratorAgent**: Transforms cold stats (numbers/counts) into human-centered stories focused on impact in areas like Dharavi and Kurla.
-- **QueryAgent**: Uses semantic search over the `needs` and `volunteers` collections to answer operational questions.
+---
+
+## 🗺 Roadmap & Status
+
+| Feature | Status | Description |
+| :--- | :--- | :--- |
+| **NGO Onboarding** | ✅ | Secure registration + KYC flow |
+| **AI Matching** | ✅ | Skill-based volunteer allocation |
+| **Needs Map** | ✅ | Real-time pin tracking + clustering |
+| **Resource Vault** | ✅ | Encrypted document storage for IDs |
+| **Surge Prediction**| ✅ | Historical analysis for Monsoon spikes |
+
+---
+
+## 📄 Documentation
+
+- [AGENTS.md](./AGENTS.md) — Detailed AI architecture and absolute development rules.
+- [DESIGN.md](./DESIGN.md) — Design system, tokens, and UI components.
+- [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) — High-level feature roadmap and technical achievements.
+
+---
+
+© 2024 Sahaay Team. Built for Mumbai, by Mumbai.

@@ -757,6 +757,7 @@ GLOBAL DESIGN SYSTEM for all Sahaay screens:
 - Radius: Cards 14px | Buttons 8px | Inputs 9px | Pills 20px
 - Border: 1px solid #E5E3DF on all cards
 - Shadow: 0 1px 3px rgba(0,0,0,0.08)
+- icons: Material Symbols Rounded (Google)
 - NO lorem ipsum — all placeholder data must be real Mumbai/NGO context
 - Bottom nav: 56px, 5 tabs, white bg, teal for active tab
 - Top bar: 56px, white bg, bottom border #E5E3DF
@@ -814,13 +815,41 @@ sahaay/
     ├── trend-chart
     ├── surge-prediction-card
     └── donor-narrative-card
+├── verification/
+│   ├── kyc-stepper
+│   ├── ocr-result-card
+│   ├── face-match-badge
+│   └── document-preview
 ```
 
 ---
 
-## 8. Icon Library
+## 8. Identity Verification Patterns
 
-Use **Material Symbols Outlined** (Google) throughout. Key icons:
+### 8.1 Aadhaar OCR Result Card
+```
+bg: white | border: 1px solid #E5E3DF | radius: 14px
+Field Labels: 11px Inter 500 #6B6965
+Field Values: 14px Inter 600 #111110
+Confidence Dot: green for >90%, amber for 70-90%, red for <70%
+```
+
+### 8.2 Face Match Badge
+```
+Large Badge: 24px height, radius 12px, Inter 12px 600
+Logic: "Face Verified" + check icon in green if score > 85%
+Logic: "Review Needed" + warning icon in amber if score 60-85%
+Logic: "Identity Mismatch" + error icon in red if score < 60%
+```
+
+### 8.3 Resource Vault Security
+Items in the vault (IDs, Documents) show a `lock` icon and a "Secured by App Check" micro-label.
+
+---
+
+## 9. Icon Library
+
+Use **Material Symbols Rounded** (Google) throughout for a softer, more modern feel. Key icons:
 
 | Context | Icon name               |
 |---------|-----------              |
@@ -838,9 +867,11 @@ Use **Material Symbols Outlined** (Google) throughout. Key icons:
 | Overdue | `schedule` / `warning`  |
 | Heatmap | `layers`                |
 | Surge | `trending_up`             |
-| Donor report | `article`          |
+| Verification | `verified_user` / `face` / `fingerprint` |
+| Security | `lock` / `shield` |
+| Vault | `inventory_2` |
 
 ---
 
 *Sahaay — सहाय — Built for India, powered by Google*
-*DESIGN.md — Keep this file updated with every visual decision made.*
+*DESIGN.md — Last updated: April 2024*

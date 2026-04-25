@@ -9,10 +9,8 @@ import (
 	"strings"
 	"time"
 
-	aiplatform "cloud.google.com/go/aiplatform/apiv1beta1"
 	"cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
-	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/structpb"
 	"sahaay.io/functions/config"
 	"sahaay.io/functions/middleware"
@@ -155,29 +153,18 @@ func CallAgent(w http.ResponseWriter, r *http.Request) {
 
 	agentID := agentForIntent(req.Intent)
 	ctx := context.Background()
-	
-	// Vertex AI Reasoning Engine Execution Client (matches the resource ID provided)
-	// regional endpoint is mandatory for us-west1
-	endpoint := config.Location + "-aiplatform.googleapis.com:443"
-	client, err := aiplatform.NewReasoningEngineExecutionClient(ctx, option.WithEndpoint(endpoint))
+
+	client, err := getReasoningClient(ctx)
 	if err != nil {
 		log.Printf("[ERROR] Failed to create Reasoning Engine client: %v", err)
 		writeJSONError(w, http.StatusInternalServerError, "Internal AI service error")
 		return
 	}
-	defer client.Close()
 
-	// Construct the input for the Reasoning Engine
-	// Reasoning Engines typically expect the input parameters wrapped in an "input" key
-	// or as a direct set of parameters depending on how the template was instantiated.
-	// For multi-agent orchestrators, we pass the intent and payload.
-	inputMap := map[string]any{
-		"input": map[string]any{
-			"intent":  req.Intent,
-			"payload": req.Payload,
-		},
-	}
-	input, _ := structpb.NewStruct(inputMap)
+	input := &structpb.Struct{Fields: make(map[string]*structpb.Value)}
+	input.Fields["intent"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: req.Intent}}
+	payloadVal, _ := structpb.NewValue(req.Payload)
+	input.Fields["payload"] = payloadVal
 
 	resp, err := client.QueryReasoningEngine(ctx, &aiplatformpb.QueryReasoningEngineRequest{
 		Name:  agentID,

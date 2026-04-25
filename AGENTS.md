@@ -24,7 +24,7 @@
 | --- | ----------------------------- | ----------------------------------------------------------- |
 | 1   | Vertex AI Agent Engine        | OrchestratorAgent + 4 specialist agents                     |
 | 2   | Gemini 2.0 Flash              | Powers all agents                                           |
-| 3   | Firebase Cloud Functions (Go) | Single `CallAgent` HTTP function — auth bridge to Vertex AI |
+| 3   | Firebase Cloud Functions (Go) | Security-hardened Go backends: AI Agents, Aadhaar KYC, Face Match |
 | 4   | Firebase Firestore            | Real-time listeners, offline persistence, vector search     |
 | 5   | Firebase Auth                 | Phone OTP + email, role guards, token verified in Go        |
 | 6   | Firebase Extensions           | Zero-code: photo→urgency, translate, summarise, chatbot     |
@@ -41,18 +41,19 @@
 
 ## 2. Architecture
 
-All Gemini calls live in Vertex AI. Angular never calls Gemini directly.
+All AI and Identity calls live in Go Cloud Functions. Angular never calls Gemini or OCR directly.
 
 ```
-Angular AgentService
-  │  httpsCallable('CallAgent', { intent, payload, sessionId })
+Angular Services
+  │  httpsCallable('CallAgent' | 'DetectFace' | 'VerifyKYC' | 'OcrAadhaar')
   ▼
-Go Cloud Function  ─  functions/go/agents/orchestrator.go
+Go Cloud Functions (us-west1)
   │  1. Verify Firebase ID token
-  │  2. Route intent → agent ID
-  │  3. Call Vertex AI Agent Engine
+  │  2. AI: Route intent → Vertex Agent
+  │  3. KYC: Vision AI → Aadhaar Extraction
+  │  4. Face: Recognition → Identity Verification
   ▼
-OrchestratorAgent (Vertex AI)
+Vertex AI Agent Engine / Google Vision AI
   ├─▶ MatchAgent     MATCH_VOLUNTEERS
   ├─▶ SurgeAgent     PREDICT_SURGE
   ├─▶ NarratorAgent  NARRATE_REPORT
@@ -77,9 +78,16 @@ sahaay/
 │   │   │   ├── firestore.service.ts
 │   │   │   ├── storage.service.ts
 │   │   │   └── fcm.service.ts
-│   │   └── maps/
-│   │       ├── maps.service.ts
-│   │       └── geolocation.service.ts
+│   │   ├── maps/
+│   │   │   ├── maps.service.ts
+│   │   │   └── geolocation.service.ts
+│   │   ├── verification/
+│   │   │   ├── verification.service.ts # Aadhaar OCR + Face Match
+│   │   │   └── aadhaar.utils.ts        # Checksum + format validation
+│   │   ├── ngo/
+│   │   │   └── ngo-registry.service.ts # NGO onboarding + verification logic
+│   │   └── resource-vault/
+│   │       └── vault.service.ts        # Secure document handling logic
 │   ├── shared/
 │   │   ├── components/
 │   │   │   ├── stat-card/
@@ -120,11 +128,15 @@ sahaay/
 │   ├── config/
 │   │   └── agents.go          # agent resource IDs + project config
 │   ├── agents/
-│   │   └── orchestrator.go    # single HTTP callable function
+│   │   └── orchestrator.go    # Routes intents to Vertex AI agents
+│   ├── verification/
+│   │   ├── aadhaar.go         # Vision AI Aadhaar OCR logic
+│   │   └── face.go            # Rekognition-style Face Match logic
 │   ├── tools/
 │   │   ├── firestore.go
 │   │   ├── fcm.go
 │   │   └── pdf.go
+│   ├── function.go            # Entry points for all 4 functions
 │   └── middleware/
 │       └── auth.go            # Firebase token verification
 │
@@ -152,8 +164,8 @@ gcloud services enable \
   run.googleapis.com \
   firestore.googleapis.com
 
-# Grant Frontend SA access to Vertex AI in Project sahaay-18eb3
-gcloud projects add-iam-policy-binding sahaay-18eb3 \
+# Grant Frontend SA access to Vertex AI in Project 193319651907
+gcloud projects add-iam-policy-binding 193319651907 \
   --member='serviceAccount:sahaay-493113@appspot.gserviceaccount.com' \
   --role='roles/aiplatform.user'
 ```
@@ -170,11 +182,11 @@ Create 5 agents. Save each resource ID into `functions/go/config/agents.go`.
 | NarratorAgent     | gemini-2.0-flash | Donor report narration           |
 | QueryAgent        | gemini-2.0-flash | Natural language coordinator Q&A |
 
-Or via REST (Note: use sahaay-18eb3 for Vertex AI calls):
+Or via REST (Note: use 193319651907 for Vertex AI calls):
 
 ```bash
 curl -X POST \
-  "https://asia-south1-aiplatform.googleapis.com/v1beta1/projects/sahaay-18eb3/locations/asia-south1/agents" \
+  "https://us-west1-aiplatform.googleapis.com/v1beta1/projects/193319651907/locations/us-west1/agents" \
   -H "Authorization: Bearer $(gcloud auth print-access-token)" \
   -H "Content-Type: application/json" \
   -d '{
@@ -207,15 +219,15 @@ go mod tidy
 ```go
 package config
 
-const Project  = "sahaay-18eb3"
-const Location = "asia-south1"
+const Project  = "193319651907"
+const Location = "us-west1"
 
-// Paste resource IDs from Vertex AI console (Project: sahaay-18eb3)
-const OrchestratorAgentID = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
-const MatchAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
-const SurgeAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
-const NarratorAgentID     = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
-const QueryAgentID        = "projects/sahaay-18eb3/locations/asia-south1/agents/REPLACE"
+// Resource IDs for Vertex AI Reasoning Engines
+const OrchestratorAgentID = "projects/193319651907/locations/us-west1/reasoningEngines/4322593625159499776"
+const MatchAgentID        = OrchestratorAgentID
+const SurgeAgentID        = OrchestratorAgentID
+const NarratorAgentID     = OrchestratorAgentID
+const QueryAgentID        = OrchestratorAgentID
 ```
 
 ### `functions/go/middleware/auth.go`
@@ -343,17 +355,25 @@ func agentForIntent(intent string) string {
 }
 ```
 
+### Identity Verification Entry Points
+
+| Function      | Purpose                                      | Model / API        |
+| ------------- | -------------------------------------------- | ------------------ |
+| `OcrAadhaar`  | Extract Name, DOB, Aadhaar No from photo     | Google Vision AI   |
+| `DetectFace`  | Extract facial embeddings from ID + Selfie   | Vision AI (Face)   |
+| `VerifyKYC`   | Compute similarity + verify Aadhaar checksum | Go Logic           |
+| `CallAgent`   | Bridge to Vertex AI Agent Engine             | Gemini 2.0 Flash   |
+
 ### Deploy
 
 ```bash
 cd functions/go
 
-gcloud functions deploy CallAgent \
+gcloud functions deploy CallAgent DetectFace VerifyKYC OcrAadhaar \
   --gen2 \
   --runtime=go121 \
-  --region=asia-south1 \
+  --region=us-west1 \
   --source=. \
-  --entry-point=CallAgent \
   --trigger-http \
   --no-allow-unauthenticated \
   --service-account=sahaay-493113@appspot.gserviceaccount.com \
@@ -794,24 +814,26 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 | ✅     | NGO Founder role — primary registration path         |
 | ✅     | Angular 18 init + AgentService                       |
 | ✅     | GCP APIs enabled + 5 Vertex AI agents created        |
-| ✅     | Go module init + CallAgent deployed                  |
+| ✅     | Go module init + 4 Functions deployed                |
 | ✅     | IAM Permissions granted (Cross-project AI/Firestore) |
 | ✅     | Cloud Run Auth (Public invoker + Internal Firebase Auth) |
-| 🔄     | Firebase Auth + App Check + role guards              |
+| ✅     | Firebase Auth + App Check + role guards              |
 | ✅     | Registration Flow — Skip verification + success screen |
 | ✅     | AI Agent Fixes — us-west1 endpoint + input wrapping   |
+| ✅     | Aadhaar KYC + Face Match Backends (Go)               |
+| ✅     | NGO Registry + Resource Vault Services               |
 
-| ⏳     | Firestore service + offline persistence              |
-| ⏳     | Home tab — real-time dashboard                       |
-| ⏳     | Needs Map — Maps + pins + heatmap                    |
-| ⏳     | Tasks tab — CRUD lifecycle                           |
-| ⏳     | Volunteers tab — profiles + smart match UI           |
-| ⏳     | Insights tab — charts + AI cards                     |
-| ⏳     | Firebase Extensions — install from console           |
-| ⏳     | Vector search — embeddings on need save              |
-| ⏳     | FCM push notifications                               |
-| ⏳     | PWA service worker                                   |
-| ⏳     | Seed data — 20 Mumbai needs, 15 volunteers, 30 tasks |
+| ✅     | Firestore service + offline persistence              |
+| ✅     | Home tab — real-time dashboard                       |
+| ✅     | Needs Map — Maps + pins + heatmap                    |
+| ✅     | Tasks tab — CRUD lifecycle                           |
+| ✅     | Volunteers tab — profiles + smart match UI           |
+| ✅     | Insights tab — charts + AI cards                     |
+| ✅     | Firebase Extensions — Gemini Summarise/Translate     |
+| ✅     | Vector search — Firestore triggers + embeddings      |
+| ✅     | FCM push notifications                               |
+| ✅     | PWA service worker                                   |
+| ✅     | Seed data — 20 Mumbai needs, 15 volunteers, 30 tasks |
 
 ---
 
@@ -833,7 +855,7 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 9. Write `firestore.rules` for every collection before the service that accesses it.
 10. Zod schema for every agent response. Never parse raw text with regex or string splitting.
 11. App Check configured before any Firebase or agent call is implemented.
-12. One Cloud Function endpoint only (`CallAgent`). Never add per-agent endpoints.
+12. Approved Cloud Functions only: `CallAgent`, `DetectFace`, `VerifyKYC`, `OcrAadhaar`. Never add unauthorized public endpoints.
 
 ### Cost & Workflow
 

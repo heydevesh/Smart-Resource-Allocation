@@ -11,47 +11,55 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// MatchVolunteers calls the MatchAgent to find the best volunteers for a task.
-func MatchVolunteers(ctx context.Context, payload map[string]any, sessionID string) (any, error) {
+var (
+	reasoningClient     *aiplatform.ReasoningEngineExecutionClient
+	reasoningClientInit bool
+)
+
+func getReasoningClient(ctx context.Context) (*aiplatform.ReasoningEngineExecutionClient, error) {
+	if reasoningClientInit {
+		return reasoningClient, nil
+	}
 	client, err := aiplatform.NewReasoningEngineExecutionClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reasoningClient = client
+	reasoningClientInit = true
+	return client, nil
+}
+
+func queryAgent(ctx context.Context, agentID string, payload map[string]any) (any, error) {
+	client, err := getReasoningClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create reasoning engine client: %v", err)
 	}
-	defer client.Close()
 
-	// Convert payload to structpb.Struct
-	input := &structpb.Struct{
-		Fields: make(map[string]*structpb.Value),
-	}
+	input := &structpb.Struct{Fields: make(map[string]*structpb.Value)}
 	for k, v := range payload {
 		val, _ := structpb.NewValue(v)
 		input.Fields[k] = val
 	}
-	
+
 	resp, err := client.QueryReasoningEngine(ctx, &aiplatformpb.QueryReasoningEngineRequest{
-		Name:  config.MatchAgentID,
+		Name:  agentID,
 		Input: input,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("MatchAgent query failed: %v", err)
+		return nil, fmt.Errorf("agent %s query failed: %v", agentID, err)
 	}
 
 	return resp.GetOutput(), nil
 }
 
-// InternalMatchLogic provides a fallback or pre-processing matching logic using Firestore.
+func MatchVolunteers(ctx context.Context, payload map[string]any, sessionID string) (any, error) {
+	return queryAgent(ctx, config.MatchAgentID, payload)
+}
+
 func InternalMatchLogic(ctx context.Context, taskID string) ([]map[string]any, error) {
-	// 1. Get Task details
 	task, err := tools.GetTask(ctx, taskID)
 	if err != nil {
 		return nil, err
 	}
-
-	// 2. Search for volunteers with matching skills and proximity
-	volunteers, err := tools.SearchVolunteers(ctx, task["category"].(string), task["locationLat"].(float64), task["locationLng"].(float64), 10.0)
-	if err != nil {
-		return nil, err
-	}
-
-	return volunteers, nil
+	return tools.SearchVolunteers(ctx, task["category"].(string), task["locationLat"].(float64), task["locationLng"].(float64), 10.0)
 }
