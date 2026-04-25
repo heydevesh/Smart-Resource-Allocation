@@ -1,11 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, doc, docData, collectionData, query, where, orderBy, setDoc, updateDoc, deleteDoc, getDoc, limit } from '@angular/fire/firestore';
-import { Observable, map } from 'rxjs';
-import { Need, Task, Volunteer, Activity, User, UserRole, InventoryItem, InventoryTransaction, Ngo, NgoStatus, NgoMembership, NotificationPreferences, DEFAULT_NOTIFICATION_PREFERENCES } from '../../models';
+import { Firestore, collection, doc, docData, collectionData, query, where, orderBy, setDoc, updateDoc, deleteDoc, getDoc, limit, writeBatch, arrayUnion } from '@angular/fire/firestore';
+import { Observable, map, of } from 'rxjs';
+import { Need, Task, Volunteer, Activity, User, UserRole, InventoryItem, InventoryTransaction, Ngo, NgoStatus, NgoMembership, NotificationPreferences, DEFAULT_NOTIFICATION_PREFERENCES, TaskAssignment, TaskAssignmentStatus, TaskContact } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
   private firestore = inject(Firestore);
+
+  private assignmentId(taskId: string, volunteerId: string): string {
+    return `${taskId}_${volunteerId}`;
+  }
 
   // --- Needs ---
   getOpenNeeds(): Observable<Need[]> {
@@ -43,7 +47,14 @@ export class FirestoreService {
     return collectionData(q, { idField: 'id' }) as Observable<Task[]>;
   }
 
-  async addTask(task: Partial<Task>): Promise<void> {
+  getTasksByIds(ids: string[]): Observable<Task[]> {
+    if (ids.length === 0) return of([] as Task[]);
+    const tasksRef = collection(this.firestore, 'tasks');
+    const q = query(tasksRef, where('id', 'in', ids));
+    return collectionData(q, { idField: 'id' }) as Observable<Task[]>;
+  }
+
+  async addTask(task: Partial<Task>): Promise<string> {
     const newDocRef = doc(collection(this.firestore, 'tasks'));
     const taskWithId = { 
       ...task, 
@@ -53,11 +64,105 @@ export class FirestoreService {
       progress: task.progress || 0
     };
     await setDoc(newDocRef, taskWithId);
+
+	return newDocRef.id;
   }
 
   async updateTask(id: string, data: Partial<Task>): Promise<void> {
     const taskDoc = doc(this.firestore, `tasks/${id}`);
     await updateDoc(taskDoc, data);
+  }
+
+  // --- Task Assignments (Requests + Accept/Decline) ---
+  getTaskAssignmentsForTask(taskId: string): Observable<TaskAssignment[]> {
+    const assignmentsRef = collection(this.firestore, 'taskAssignments');
+    const q = query(assignmentsRef, where('taskId', '==', taskId), orderBy('requestedAt', 'desc'));
+    return collectionData(q, { idField: 'id' }) as Observable<TaskAssignment[]>;
+  }
+
+  getTaskAssignment(taskId: string, volunteerId: string): Observable<TaskAssignment | undefined> {
+    const id = this.assignmentId(taskId, volunteerId);
+    const ref = doc(this.firestore, `taskAssignments/${id}`);
+    return docData(ref, { idField: 'id' }) as Observable<TaskAssignment | undefined>;
+  }
+
+  getVolunteerTaskAssignments(volunteerId: string, statuses?: TaskAssignmentStatus[]): Observable<TaskAssignment[]> {
+    const assignmentsRef = collection(this.firestore, 'taskAssignments');
+    const q = statuses && statuses.length > 0
+      ? query(assignmentsRef, where('volunteerId', '==', volunteerId), where('status', 'in', statuses), orderBy('requestedAt', 'desc'))
+      : query(assignmentsRef, where('volunteerId', '==', volunteerId), orderBy('requestedAt', 'desc'));
+    return collectionData(q, { idField: 'id' }) as Observable<TaskAssignment[]>;
+  }
+
+  async createTaskAssignmentRequests(params: {
+    taskId: string;
+    volunteerIds: string[];
+    requestedBy: string;
+    region?: string;
+  }): Promise<void> {
+    const now = new Date();
+
+    for (const volunteerId of params.volunteerIds) {
+      const id = this.assignmentId(params.taskId, volunteerId);
+      const ref = doc(this.firestore, `taskAssignments/${id}`);
+      const existing = await getDoc(ref);
+      if (existing.exists()) continue;
+
+      const assignment: TaskAssignment = {
+        id,
+        taskId: params.taskId,
+        volunteerId,
+        status: 'pending',
+        requestedBy: params.requestedBy,
+        requestedAt: now,
+        region: params.region,
+      };
+
+      await setDoc(ref, assignment);
+    }
+  }
+
+  async addVolunteerToTask(taskId: string, volunteerId: string): Promise<void> {
+    const taskDoc = doc(this.firestore, `tasks/${taskId}`);
+    await updateDoc(taskDoc, {
+      volunteerIds: arrayUnion(volunteerId),
+    });
+  }
+
+  async respondToTaskAssignment(params: {
+    taskId: string;
+    volunteerId: string;
+    status: Exclude<TaskAssignmentStatus, 'pending' | 'cancelled'>;
+  }): Promise<void> {
+    const id = this.assignmentId(params.taskId, params.volunteerId);
+    const ref = doc(this.firestore, `taskAssignments/${id}`);
+    await updateDoc(ref, {
+      status: params.status,
+      respondedAt: new Date(),
+    });
+  }
+
+  async cancelTaskAssignment(params: {
+    taskId: string;
+    volunteerId: string;
+  }): Promise<void> {
+    const id = this.assignmentId(params.taskId, params.volunteerId);
+    const ref = doc(this.firestore, `taskAssignments/${id}`);
+    await updateDoc(ref, {
+      status: 'cancelled',
+      respondedAt: new Date(),
+    });
+  }
+
+  // --- Task Contacts (unlocked after acceptance) ---
+  getTaskContact(taskId: string): Observable<TaskContact | undefined> {
+    const ref = doc(this.firestore, `taskContacts/${taskId}`);
+    return docData(ref, { idField: 'id' }) as Observable<TaskContact | undefined>;
+  }
+
+  async upsertTaskContact(contact: TaskContact): Promise<void> {
+    const ref = doc(this.firestore, `taskContacts/${contact.taskId}`);
+    await setDoc(ref, contact, { merge: true });
   }
 
   // --- Volunteers ---
