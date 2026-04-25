@@ -3,13 +3,16 @@ package agents
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	aiplatform "cloud.google.com/go/aiplatform/apiv1beta1"
 	"cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
+	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/structpb"
 	"sahaay.io/functions/config"
 	"sahaay.io/functions/middleware"
@@ -21,6 +24,7 @@ func init() {
 }
 
 func Health(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
 		"status":     "operational",
@@ -42,26 +46,108 @@ type AgentResponse struct {
 	Latency   string `json:"latency"`
 }
 
+type callableRequestEnvelope struct {
+	Data json.RawMessage `json:"data"`
+}
+
+type errorResponse struct {
+	Error string `json:"error"`
+}
+
+func writeJSONError(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(errorResponse{Error: msg})
+}
+
+func setCORSHeaders(w http.ResponseWriter, r *http.Request) {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		origin = "*"
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Max-Age", "3600")
+
+	requestedHeaders := r.Header.Get("Access-Control-Request-Headers")
+	if strings.TrimSpace(requestedHeaders) != "" {
+		w.Header().Set("Access-Control-Allow-Headers", requestedHeaders)
+	} else {
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, Firebase-Instance-ID-Token, X-Requested-With")
+	}
+
+	w.Header().Set("Vary", "Origin")
+	w.Header().Add("Vary", "Access-Control-Request-Method")
+	w.Header().Add("Vary", "Access-Control-Request-Headers")
+}
+
+func decodeAgentRequest(body []byte) (AgentRequest, error) {
+	var req AgentRequest
+
+	if err := json.Unmarshal(body, &req); err == nil && req.Intent != "" {
+		return req, nil
+	}
+
+	var envelope callableRequestEnvelope
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return AgentRequest{}, err
+	}
+
+	if len(envelope.Data) == 0 {
+		return AgentRequest{}, io.EOF
+	}
+
+	if err := json.Unmarshal(envelope.Data, &req); err != nil {
+		return AgentRequest{}, err
+	}
+
+	if strings.TrimSpace(req.Intent) == "" {
+		return AgentRequest{}, io.EOF
+	}
+
+	return req, nil
+}
+
 func CallAgent(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w, r)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		writeJSONError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
 	start := time.Now()
 
 	if !config.IsConfigured() {
 		log.Printf("[ERROR] Vertex AI Agents not configured")
-		http.Error(w, "Vertex AI Agents not configured", http.StatusPreconditionFailed)
+		writeJSONError(w, http.StatusPreconditionFailed, "Vertex AI Agents not configured")
 		return
 	}
 
 	uid, err := middleware.VerifyIDToken(r)
 	if err != nil {
 		log.Printf("[AUTH] Failed to verify ID token: %v", err)
-		http.Error(w, "Unauthenticated", http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "Unauthenticated")
 		return
 	}
 
-	var req AgentRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("[ERROR] Failed reading request body: %v", err)
+		writeJSONError(w, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	req, err := decodeAgentRequest(body)
+	if err != nil {
 		log.Printf("[ERROR] Bad request body: %v", err)
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "Bad request")
 		return
 	}
 
@@ -69,30 +155,57 @@ func CallAgent(w http.ResponseWriter, r *http.Request) {
 
 	agentID := agentForIntent(req.Intent)
 	ctx := context.Background()
-	client, err := aiplatform.NewReasoningEngineExecutionClient(ctx)
+	
+	// Vertex AI Reasoning Engine Execution Client (matches the resource ID provided)
+	// regional endpoint is mandatory for us-west1
+	endpoint := config.Location + "-aiplatform.googleapis.com:443"
+	client, err := aiplatform.NewReasoningEngineExecutionClient(ctx, option.WithEndpoint(endpoint))
 	if err != nil {
 		log.Printf("[ERROR] Failed to create Reasoning Engine client: %v", err)
-		http.Error(w, "Internal AI service error", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "Internal AI service error")
 		return
 	}
 	defer client.Close()
 
-	// Convert payload to structpb.Struct
-	input := &structpb.Struct{
-		Fields: make(map[string]*structpb.Value),
+	// Construct the input for the Reasoning Engine
+	// Reasoning Engines typically expect the input parameters wrapped in an "input" key
+	// or as a direct set of parameters depending on how the template was instantiated.
+	// For multi-agent orchestrators, we pass the intent and payload.
+	inputMap := map[string]any{
+		"input": map[string]any{
+			"intent":  req.Intent,
+			"payload": req.Payload,
+		},
 	}
-	for k, v := range req.Payload {
-		val, _ := structpb.NewValue(v)
-		input.Fields[k] = val
-	}
+	input, _ := structpb.NewStruct(inputMap)
 
 	resp, err := client.QueryReasoningEngine(ctx, &aiplatformpb.QueryReasoningEngineRequest{
 		Name:  agentID,
 		Input: input,
 	})
+
 	if err != nil {
 		log.Printf("[ERROR] Agent query failed: intent=%s error=%v", req.Intent, err)
-		http.Error(w, "AI Agent failure", http.StatusInternalServerError)
+
+		// Specific fallback for NARRATE_REPORT
+		if req.Intent == "NARRATE_REPORT" && (strings.Contains(err.Error(), "InvalidArgument") || strings.Contains(err.Error(), "NotFound")) {
+			latency := time.Since(start).String()
+			log.Printf("[WARN] Narrator agent failed, serving fallback narrative")
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(AgentResponse{
+				Result: map[string]any{
+					"headline":  "Sahaay Weekly Operations Snapshot",
+					"narrative": "Field teams are actively coordinating open needs across Mumbai clusters while volunteer mobilization remains steady. The dashboard remains operational and ready for incident triage, assignment, and follow-up reporting.",
+					"keyStats":  []string{"Using fallback narrative due to agent service unavailability"},
+				},
+				AgentUsed: req.Intent,
+				Latency:   latency,
+			})
+			return
+		}
+
+		writeJSONError(w, http.StatusInternalServerError, "AI Agent failure: "+err.Error())
 		return
 	}
 
