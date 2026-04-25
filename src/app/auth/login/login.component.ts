@@ -44,7 +44,7 @@ import { AuthService } from '../../core/auth/auth.service';
           </div>
 
           <!-- Auth Form -->
-          <form class="auth-form" (ngSubmit)="loginWithEmail()">
+          <form class="auth-form" (ngSubmit)="isSignUpMode() ? registerWithEmail() : loginWithEmail()">
             <!-- Email -->
             <div class="field-group">
               <label class="field-label" for="email">Email address</label>
@@ -99,15 +99,22 @@ import { AuthService } from '../../core/auth/auth.service';
               </mat-checkbox>
             </div>
 
-            <!-- Sign In Button -->
+            <!-- Sign In/Up Button -->
             <button type="submit" class="sign-in-btn" [disabled]="loading">
               @if (loading) {
                 <span class="btn-spinner"></span>
-                Signing in...
+                {{ isSignUpMode() ? 'Signing up...' : 'Signing in...' }}
               } @else {
-                Sign In
+                {{ isSignUpMode() ? 'Sign Up' : 'Sign In' }}
               }
             </button>
+
+            <div class="auth-switch">
+              <span class="auth-switch-text">{{ isSignUpMode() ? 'Already have an account?' : 'Don\\'t have an account?' }}</span>
+              <button type="button" class="auth-switch-link" (click)="toggleMode()">
+                {{ isSignUpMode() ? 'Sign In' : 'Sign Up' }}
+              </button>
+            </div>
 
             <!-- Divider -->
             <div class="auth-divider">
@@ -502,6 +509,32 @@ import { AuthService } from '../../core/auth/auth.service';
       color: #005147;
     }
 
+    /* ===== Auth Switch ===== */
+    .auth-switch {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.8rem;
+    }
+    .auth-switch-text {
+      color: rgba(62, 73, 70, 0.7);
+    }
+    .auth-switch-link {
+      background: none;
+      border: none;
+      color: #006c4e;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0 4px;
+      transition: color 0.2s;
+    }
+    .auth-switch-link:hover {
+      color: #005147;
+      text-decoration: underline;
+    }
+
+    :host-context(.dark-theme) .auth-switch-text { color: rgba(241, 241, 240, 0.6); }
+    :host-context(.dark-theme) .auth-switch-link { color: #68dbae; }
+
     /* ===== Footer ===== */
     .login-footer {
       text-align: center;
@@ -573,21 +606,116 @@ export class LoginComponent {
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
 
+  private getAuthErrorCode(error: unknown): string {
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      const candidate = (error as { code?: unknown }).code;
+      if (typeof candidate === 'string') {
+        return candidate;
+      }
+    }
+    return '';
+  }
+
+  private getSignInErrorMessage(code: string): string {
+    switch (code) {
+      case 'auth/invalid-credential':
+        return 'Invalid email/password for this project. If you signed up with Google, use Google sign-in.';
+      case 'auth/invalid-email':
+        return 'Please enter a valid email address.';
+      case 'auth/user-disabled':
+        return 'This account has been disabled. Contact support.';
+      case 'auth/too-many-requests':
+        return 'Too many attempts. Please wait and try again.';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your connection and try again.';
+      default:
+        return 'Authentication failed. Please check your credentials.';
+    }
+  }
+
+  private getSignUpErrorMessage(code: string): string {
+    switch (code) {
+      case 'auth/email-already-in-use':
+        return 'This email is already in use. Please sign in instead.';
+      case 'auth/weak-password':
+        return 'Password is too weak. Please use a stronger password.';
+      case 'auth/invalid-email':
+        return 'Invalid email address format.';
+      case 'auth/operation-not-allowed':
+        return 'Email/password sign-up is disabled in Firebase Authentication.';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your connection and try again.';
+      default:
+        return 'Registration failed. Please try again.';
+    }
+  }
+
+  private getGoogleErrorMessage(code: string): string {
+    if (code === 'auth/unauthorized-domain') {
+      return `Google sign-in blocked: add ${window.location.hostname} to Firebase Auth authorized domains.`;
+    }
+    if (code === 'auth/popup-closed-by-user') {
+      return 'Google sign-in was cancelled.';
+    }
+    return 'Google sign-in failed.';
+  }
+
   email = '';
   password = '';
   loading = false;
   showPassword = signal(false);
   demoOpen = signal(false);
+  isSignUpMode = signal(false);
+
+  toggleMode() {
+    this.isSignUpMode.set(!this.isSignUpMode());
+  }
+
+  async registerWithEmail() {
+    const email = this.email.trim();
+    const password = this.password;
+
+    if (!email || !password) {
+      this.snackBar.open('Please enter both email and password', 'Close', { duration: 3000 });
+      return;
+    }
+    if (password.length < 6) {
+      this.snackBar.open('Password must be at least 6 characters', 'Close', { duration: 3000 });
+      return;
+    }
+
+    this.email = email;
+    this.loading = true;
+    try {
+      await this.auth.registerWithEmail(email, password);
+      this.snackBar.open('Account created successfully!', 'Close', { duration: 2000 });
+      this.router.navigate(['/register']); // Multi-step profile registration
+    } catch (e: unknown) {
+      const code = this.getAuthErrorCode(e);
+      if (code.startsWith('auth/')) {
+        console.warn('[Auth register]', code);
+      } else {
+        console.error(e);
+      }
+      this.snackBar.open(this.getSignUpErrorMessage(code), 'Close', { duration: 4500 });
+    } finally {
+      this.loading = false;
+    }
+  }
 
   async loginWithEmail() {
-    if (!this.email || !this.password) {
+    const email = this.email.trim();
+    const password = this.password;
+
+    if (!email || !password) {
       this.snackBar.open('Please enter both email and password', 'Close', { duration: 3000 });
       return;
     }
 
+    this.email = email;
     this.loading = true;
     try {
-      const result = await this.auth.loginWithEmail(this.email, this.password);
+      const result = await this.auth.loginWithEmail(email, password);
       // Check if user has completed registration
       const exists = await this.auth.checkUserExists(result.user.uid);
       if (!exists) {
@@ -595,13 +723,14 @@ export class LoginComponent {
       } else {
         this.router.navigate(['/home']);
       }
-    } catch (e: any) {
-      console.error(e);
-      let msg = 'Authentication failed. Please check your credentials.';
-      if (e.code === 'auth/invalid-credential') {
-        msg = 'Invalid email or password.';
+    } catch (e: unknown) {
+      const code = this.getAuthErrorCode(e);
+      if (code.startsWith('auth/')) {
+        console.warn('[Auth sign-in]', code);
+      } else {
+        console.error(e);
       }
-      this.snackBar.open(msg, 'Close', { duration: 4000 });
+      this.snackBar.open(this.getSignInErrorMessage(code), 'Close', { duration: 4500 });
     } finally {
       this.loading = false;
     }
@@ -618,9 +747,14 @@ export class LoginComponent {
       } else {
         this.router.navigate(['/home']);
       }
-    } catch (e: any) {
-      console.error(e);
-      this.snackBar.open('Google sign-in failed.', 'Close', { duration: 4000 });
+    } catch (e: unknown) {
+      const code = this.getAuthErrorCode(e);
+      if (code.startsWith('auth/')) {
+        console.warn('[Auth Google]', code);
+      } else {
+        console.error(e);
+      }
+      this.snackBar.open(this.getGoogleErrorMessage(code), 'Close', { duration: 5000 });
     } finally {
       this.loading = false;
     }
