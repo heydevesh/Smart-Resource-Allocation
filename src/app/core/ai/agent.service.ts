@@ -61,6 +61,6 @@ export class AgentService {
   }
 
   queryAssistant(question: string, context: Record<string, unknown>) {
-    return this.dispatch<string>("QUERY_ASSISTANT", { question, context });
+    return this.dispatch<{ answer: string }>("QUERY_ASSISTANT", { question, context });
   }
 }

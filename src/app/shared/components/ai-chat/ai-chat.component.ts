@@ -158,16 +158,22 @@ export class AiChatComponent {
       const context = { dashboardState: 'home_view' };
       const response = await this.agentService.queryAssistant(query, context);
       
-      this.messages.update(m => [...m, { 
-        role: 'assistant', 
-        content: typeof response === 'string' ? response : JSON.stringify(response)
-      }]);
+      // response is { answer: string } — extract the text
+      let displayText: string;
+      if (response && typeof response === 'object' && 'answer' in response) {
+        displayText = (response as { answer: string }).answer;
+      } else if (typeof response === 'string') {
+        displayText = response;
+      } else {
+        displayText = JSON.stringify(response);
+      }
+
+      this.messages.update(m => [...m, { role: 'assistant', content: displayText }]);
     } catch (e) {
       console.error('Chat error:', e);
-      // Fallback
       this.messages.update(m => [...m, { 
         role: 'assistant', 
-        content: "I'm currently unable to reach the reasoning engine. Please ensure Vertex AI endpoints are configured in agents.go."
+        content: "I'm unable to connect to the AI agent right now. Please try again in a moment."
       }]);
     } finally {
       this.isLoading.set(false);

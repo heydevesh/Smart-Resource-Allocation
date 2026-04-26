@@ -9,9 +9,11 @@ const Location = "us-west1"
 // This is the main Firebase project where ToS was accepted via Agent Studio.
 const GeminiProject = "sahaay-493113"
 // GeminiLocation is where Gemini publisher models are available.
+// us-central1 is the primary region for Gemini publisher models in Vertex AI.
 const GeminiLocation = "us-central1"
 // GeminiModel is the Vertex AI publisher model ID for Gemini.
-const GeminiModel = "gemini-2.0-flash-001"
+// Use "gemini-2.0-flash" (no version suffix) for the latest stable flash model.
+const GeminiModel = "gemini-2.0-flash"
 const OrchestratorAgentID = "projects/193319651907/locations/us-west1/reasoningEngines/4322593625159499776"
 // Using Orchestrator as fallback for now.
 const MatchAgentID        = OrchestratorAgentID
