@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Functions, httpsCallable } from '@angular/fire/functions';
+import { HttpCallService } from '../firebase/http-call.service';
 
 export interface CloudVisionFaceResult {
   faceDetected: boolean;
@@ -29,7 +29,7 @@ export interface AadhaarOcrResult {
 
 @Injectable({ providedIn: 'root' })
 export class VerificationService {
-  private fns = inject(Functions);
+  private http = inject(HttpCallService);
   loading = signal(false);
   status = signal('');
 
@@ -37,12 +37,11 @@ export class VerificationService {
   async detectFaceWithVision(imageBase64: string): Promise<CloudVisionFaceResult> {
     this.status.set('Running Cloud Vision face detection...');
     try {
-      const callable = httpsCallable<{ imageBase64: string }, CloudVisionFaceResult>(
-        this.fns, 'DetectFace'
-      );
       const base64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-      const result = await callable({ imageBase64: base64 });
-      return result.data;
+      return await this.http.call<{ imageBase64: string }, CloudVisionFaceResult>(
+        'DetectFace',
+        { imageBase64: base64 }
+      );
     } catch (e) {
       console.warn('Cloud Vision API unavailable, falling back:', e);
       return { faceDetected: true, faceCount: 1, confidence: 0, isBlurred: false, hasHeadwear: false };
@@ -54,15 +53,12 @@ export class VerificationService {
     this.loading.set(true);
     this.status.set('Matching faces with Gemini...');
     try {
-      const callable = httpsCallable<any, any>(this.fns, 'VerifyKYC');
-      const result = await callable({
+      const res = await this.http.call<any, any>('VerifyKYC', {
         aadhaarImageBase64: aadhaarImageSrc,
         selfieImageBase64: selfieImageSrc
       });
 
-      const res = result.data;
       this.status.set(res.faceMatched ? 'Face matched!' : 'Face mismatch.');
-      
       return {
         matched: res.faceMatched,
         distance: 1 - (res.confidence / 100),
@@ -89,10 +85,8 @@ export class VerificationService {
     this.status.set('Reading Aadhaar card (OCR)...');
     try {
       const base64 = await this.fileToDataUrl(imageFile);
-      const callable = httpsCallable<any, any>(this.fns, 'OcrAadhaar');
-      const result = await callable({ imageBase64: base64 });
-      
-      const res = result.data;
+      const res = await this.http.call<any, any>('OcrAadhaar', { imageBase64: base64 });
+
       this.status.set('OCR complete.');
       return {
         extractedText: '',
@@ -124,4 +118,3 @@ export class VerificationService {
     });
   }
 }
-

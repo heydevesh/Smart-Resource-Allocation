@@ -16,9 +16,9 @@ var authClient *auth.Client
 
 func init() {
 	ctx := context.Background()
-	app, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: config.Project})
+	app, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: config.DataProject})
 	if err != nil {
-		log.Printf("[AUTH] Failed to initialize Firebase app: %v", err)
+		log.Printf("[AUTH] Failed to initialize Firebase app (Data Project): %v", err)
 		return
 	}
 

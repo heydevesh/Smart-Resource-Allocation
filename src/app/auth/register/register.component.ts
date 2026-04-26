@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -21,6 +21,7 @@ import { NgoDocument } from '../../models';
 @Component({
   selector: 'app-register',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     MatButtonModule, MatIconModule, MatInputModule,
@@ -35,7 +36,6 @@ import { NgoDocument } from '../../models';
 
       <main class="register-main">
         <div class="register-card">
-          <!-- Brand -->
           <div class="brand-header">
             <div class="brand-icon">
               <mat-icon fontSet="material-symbols-rounded"
@@ -44,8 +44,6 @@ import { NgoDocument } from '../../models';
             <h1 class="brand-name">Join Sahaay</h1>
             <p class="brand-tagline">Complete your profile to get started</p>
           </div>
-
-          <!-- Step Indicator -->
           <div class="step-bar">
             @for (s of steps; track s; let i = $index) {
               <div class="step-dot" [class.active]="currentStep() === i" [class.done]="currentStep() > i">

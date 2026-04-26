@@ -6,7 +6,7 @@
   font-family: 'Inter', sans-serif;
   padding: 24px 0;
 }
-.ambient-blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.2; pointer-events: none; }
+.ambient-blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.2; pointer-events: none; transform: translateZ(0); will-change: transform; }
 .blob-1 { width: 420px; height: 420px; background: #85d5c5; top: -120px; left: -80px; }
 .blob-2 { width: 320px; height: 320px; background: #68dbae; bottom: -60px; right: -40px; }
 

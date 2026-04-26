@@ -91,4 +91,21 @@ export const routes: Routes = [
       { path: "", redirectTo: "home", pathMatch: "full" },
     ],
   },
+
+  // ── Error pages (outside AppShell, no auth guard) ─────────────
+  {
+    path: 'unauthorized',
+    loadComponent: () =>
+      import('./features/errors/unauthorized/unauthorized.component').then(
+        (m) => m.UnauthorizedComponent,
+      ),
+  },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./features/errors/not-found/not-found.component').then(
+        (m) => m.NotFoundComponent,
+      ),
+  },
 ];
+

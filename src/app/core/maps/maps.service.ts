@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { GeolocationService } from './geolocation.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -12,10 +13,37 @@ export class MapsService {
   readonly defaultCenter: google.maps.LatLngLiteral = { lat: 19.0444, lng: 72.8501 };
 
   constructor() {
-    this.checkIfLoaded();
+    this.loadMapsScript();
   }
 
-  private checkIfLoaded() {
+  private loadMapsScript() {
+    // If already loaded, mark and return
+    if (typeof google !== 'undefined' && google.maps) {
+      this.isLoaded.set(true);
+      return;
+    }
+
+    // If the script tag already exists in the DOM, just wait for it
+    if (document.querySelector('script[data-maps-loader]')) {
+      this.waitForGoogle();
+      return;
+    }
+
+    const key = environment.mapsApiKey;
+    if (!key) {
+      console.warn('[MapsService] No mapsApiKey set in environment — map will not load.');
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=visualization&loading=async`;
+    script.defer = true;
+    script.setAttribute('data-maps-loader', 'true');
+    script.onload = () => this.isLoaded.set(true);
+    document.head.appendChild(script);
+  }
+
+  private waitForGoogle() {
     const check = setInterval(() => {
       if (typeof google !== 'undefined' && google.maps) {
         this.isLoaded.set(true);

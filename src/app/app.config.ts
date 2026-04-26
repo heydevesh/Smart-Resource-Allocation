@@ -27,9 +27,7 @@ export const appConfig: ApplicationConfig = {
         })
       });
     }),
-    provideFunctions(() => {
-      return getFunctions(getApp(), environment.functionsRegion);
-    }),
+    provideFunctions(() => getFunctions(getApp(), environment.functionsRegion)),
     provideStorage(() => getStorage()),
     provideMessaging(() => getMessaging()),
     { provide: MAT_ICON_DEFAULT_OPTIONS, useValue: { fontSet: 'material-symbols-rounded' } }

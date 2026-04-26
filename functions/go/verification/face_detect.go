@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	vision "cloud.google.com/go/vision/apiv1"
@@ -39,9 +40,14 @@ func DetectFace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Access-Control-Allow-Origin", origin)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID, X-Requested-With")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID, Firebase-Instance-ID-Token, X-Requested-With")
+	
+	if origin != "*" {
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+	}
+	
+	w.Header().Set("Access-Control-Max-Age", "3600")
 	w.Header().Set("Vary", "Origin, Access-Control-Request-Headers")
 
 	if r.Method == "OPTIONS" {
@@ -56,10 +62,23 @@ func DetectFace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var bodyBytes []byte
+	if r.Body != nil {
+		bodyBytes, _ = io.ReadAll(r.Body)
+	}
+
 	var req DetectFaceRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
+	if err := json.Unmarshal(bodyBytes, &req); err != nil || req.ImageBase64 == "" {
+		// Try to unwrap from "data" field
+		var envelope struct {
+			Data DetectFaceRequest `json:"data"`
+		}
+		if err := json.Unmarshal(bodyBytes, &envelope); err == nil && envelope.Data.ImageBase64 != "" {
+			req = envelope.Data
+		} else if r.Method != "OPTIONS" {
+			http.Error(w, "Bad request: missing imageBase64", http.StatusBadRequest)
+			return
+		}
 	}
 
 	imgBytes, err := base64.StdEncoding.DecodeString(req.ImageBase64)

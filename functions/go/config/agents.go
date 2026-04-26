@@ -1,9 +1,21 @@
 package config
 
-// ── Project & Location ────────────────────────────────────────
-// Firebase + Vertex AI project hosting all agents.
-const Project  = "193319651907" // Updated to numeric ID from reasoning engine URI
+// Project B: AI + Functions
+const Project = "sahaay-493113"
+
+// Project A: Auth + Firestore + Storage
+const DataProject = "sahaay-18eb3"
+
+// Location for Cloud Functions and Vertex AI Agent Engine
 const Location = "us-west1"
+
+// GeminiLocation is where Gemini publisher models (gemini-2.0-flash etc.) are available.
+// NOTE: gemini-2.0-flash-001 is NOT available in us-west1 — must use us-central1.
+const GeminiLocation = "us-central1"
+
+// GeminiModel is the Vertex AI publisher model ID for Gemini 2.0 Flash.
+const GeminiModel = "gemini-2.0-flash-001"
+
 
 // ── Vertex AI Agent Resource IDs ─────────────────────────────
 // The user provided a reasoning engine URI:

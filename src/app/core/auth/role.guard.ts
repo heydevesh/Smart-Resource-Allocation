@@ -12,8 +12,8 @@ export const roleGuard = (allowedRoles: UserRole[]) => {
     const router = inject(Router);
     return inject(AuthService).currentUser$.pipe(
       filter(user => user !== undefined),
-      map(user => 
-        (user && allowedRoles.includes(user.role)) || 
+      map(user =>
+        (user && allowedRoles.includes(user.role)) ||
         router.createUrlTree(['/auth'])
       )
     );
@@ -22,14 +22,16 @@ export const roleGuard = (allowedRoles: UserRole[]) => {
 
 /**
  * Guard that checks if the user has a specific permission or any one of a list of permissions.
- * This is the preferred way to protect routes in the new RBAC system.
+ * - Unauthenticated users → /auth
+ * - Applicants (pending review) → /verification-status
+ * - Authenticated users without the required permission → /unauthorized (403)
  */
 export const permissionGuard = (permissions: Permission | Permission[]) => {
   return () => {
     const router = inject(Router);
     const authService = inject(AuthService);
     const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions];
-    
+
     return authService.currentUser$.pipe(
       filter(user => user !== undefined),
       map(user => {
@@ -37,11 +39,16 @@ export const permissionGuard = (permissions: Permission | Permission[]) => {
           const hasAny = requiredPermissions.some(p => authService.hasPermission(p));
           if (hasAny) return true;
 
-          // Special handling for applicants: redirect to status page instead of login
+          // Applicants haven't been approved yet — send to status page
           if (user.role === 'applicant') {
             return router.createUrlTree(['/verification-status']);
           }
+
+          // Authenticated but insufficient role → 403
+          return router.createUrlTree(['/unauthorized']);
         }
+
+        // Not logged in → login page
         return router.createUrlTree(['/auth']);
       })
     );

@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
-	"os"
 	"strings"
 
 	"cloud.google.com/go/vertexai/genai"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
+	"sahaay.io/functions/config"
 	"sahaay.io/functions/middleware"
 )
 
@@ -77,9 +77,15 @@ func setCORS(w http.ResponseWriter, r *http.Request) bool {
 	}
 
 	w.Header().Set("Access-Control-Allow-Origin", origin)
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID, X-Requested-With")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID, Firebase-Instance-ID-Token, X-Requested-With")
+	
+	// Credentials cannot be true if origin is "*"
+	if origin != "*" {
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+	}
+	
+	w.Header().Set("Access-Control-Max-Age", "3600")
 	w.Header().Set("Vary", "Origin, Access-Control-Request-Headers")
 
 	if r.Method == http.MethodOptions {
@@ -136,19 +142,14 @@ func OcrAadhaar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if projectID == "" {
-		projectID = "sahaay-18eb3"
-	}
-
-	client, err := genai.NewClient(ctx, projectID, "us-west1")
+	client, err := genai.NewClient(ctx, config.Project, config.GeminiLocation)
 	if err != nil {
 		http.Error(w, "Failed to init Gemini", http.StatusInternalServerError)
 		return
 	}
 	defer client.Close()
 
-	model := client.GenerativeModel("gemini-2.0-flash")
+	model := client.GenerativeModel(config.GeminiModel)
 	model.ResponseSchema = &genai.Schema{
 		Type: genai.TypeObject,
 		Properties: map[string]*genai.Schema{
@@ -210,19 +211,14 @@ func VerifyKYC(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if projectID == "" {
-		projectID = "sahaay-18eb3"
-	}
-
-	client, err := genai.NewClient(ctx, projectID, "us-west1")
+	client, err := genai.NewClient(ctx, config.Project, config.GeminiLocation)
 	if err != nil {
 		http.Error(w, "Failed to init Gemini", http.StatusInternalServerError)
 		return
 	}
 	defer client.Close()
 
-	model := client.GenerativeModel("gemini-2.0-flash")
+	model := client.GenerativeModel(config.GeminiModel)
 	model.ResponseSchema = &genai.Schema{
 		Type: genai.TypeObject,
 		Properties: map[string]*genai.Schema{

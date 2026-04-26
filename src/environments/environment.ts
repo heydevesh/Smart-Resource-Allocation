@@ -22,8 +22,12 @@ export const environment = {
 
   // ── Vertex AI / Cloud Functions ──────────────────────────────
   functionsRegion: 'us-west1',
-  vertexAiProject: 'sahaay-18eb3',
+  vertexAiProject: 'sahaay-493113',
 
   // ── Firebase App Check (reCAPTCHA v3) ────────────────────────
   recaptchaSiteKey: '',
+
+  // ── Google Maps JS API ───────────────────────────────────────
+  // Obtain from: Google Cloud Console → APIs & Services → Credentials
+  mapsApiKey: 'AIzaSyDO0y2NoC8JUfQ4-HHOMTi4Y-HdybgfoVk',
 };

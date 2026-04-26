@@ -70,9 +70,8 @@ service cloud.firestore {
 
     // Needs Collection (Crisis Reports)
     match /needs/{needId} {
-      allow read: if isAuthenticated() && (
-        hasAnyRole(['volunteer', 'field_lead', 'ngo_founder', 'ngo_admin', 'super_admin'])
-      );
+      // All authenticated users can read needs (applicants see the live map during onboarding)
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated() && (
         hasAnyRole(['volunteer', 'field_lead', 'ngo_founder', 'ngo_admin', 'super_admin'])
       );
@@ -151,11 +150,8 @@ service cloud.firestore {
 
     // Activities Collection (Audit Log)
     match /activities/{activityId} {
-      allow read: if isAuthenticated() && (
-        hasAnyRole(['volunteer', 'field_lead', 'ngo_founder', 'ngo_admin', 'super_admin']) ||
-        (hasRole('field_lead') && isSameRegion(resource.data)) ||
-        resource.data.userId == request.auth.uid
-      );
+      // All authenticated users can read activities (feeds home & insights screens)
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if false; // Immutable audit log
     }

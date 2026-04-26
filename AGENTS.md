@@ -371,7 +371,7 @@ cd functions/go
 
 gcloud functions deploy CallAgent DetectFace VerifyKYC OcrAadhaar \
   --gen2 \
-  --runtime=go121 \
+  --runtime=go122 \
   --region=us-west1 \
   --source=. \
   --trigger-http \
