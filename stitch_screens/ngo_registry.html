@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sahaay Sentinel - NGO Registry</title>
+<!-- Google Fonts: Inter & DM Serif Display -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config injected from Design System -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+                    "tertiary-container": "#742fe5",
+                    "on-tertiary-fixed-variant": "#5a00c6",
+                    "on-tertiary-fixed": "#25005a",
+                    "surface": "#f9f9f8",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#eaddff",
+                    "on-primary-fixed": "#00201b",
+                    "on-background": "#1a1c1c",
+                    "surface-tint": "#086a5d",
+                    "secondary-fixed": "#86f8c9",
+                    "on-error": "#ffffff",
+                    "on-surface": "#1a1c1c",
+                    "error-container": "#ffdad6",
+                    "surface-variant": "#e2e2e2",
+                    "surface-container-highest": "#e2e2e2",
+                    "outline-variant": "#bec9c5",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#85d5c5",
+                    "inverse-on-surface": "#f1f1f0",
+                    "surface-container": "#eeeeed",
+                    "primary": "#005147",
+                    "primary-fixed": "#a1f2e1",
+                    "tertiary-fixed-dim": "#d2bbff",
+                    "secondary": "#006c4e",
+                    "primary-container": "#0a6b5e",
+                    "on-secondary-fixed": "#002115",
+                    "on-secondary-fixed-variant": "#00513a",
+                    "secondary-container": "#83f5c6",
+                    "outline": "#6f7976",
+                    "on-secondary-container": "#007151",
+                    "on-tertiary-container": "#e3d2ff",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#005046",
+                    "surface-bright": "#f9f9f8",
+                    "background": "#f9f9f8",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#dadad9",
+                    "surface-container-high": "#e8e8e7",
+                    "inverse-surface": "#2f3130",
+                    "surface-container-low": "#f3f4f3",
+                    "on-surface-variant": "#3e4946",
+                    "secondary-fixed-dim": "#68dbae",
+                    "tertiary": "#5b00c7",
+                    "on-primary-container": "#98e8d8",
+                    "inverse-primary": "#85d5c5"
+            },
+            borderRadius: {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            fontFamily: {
+                    "headline": ["DM Serif Display", "serif"],
+                    "body": ["Inter", "sans-serif"],
+                    "label": ["Inter", "sans-serif"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+          font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased flex h-screen overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="h-full w-72 flex flex-col fixed left-0 top-0 border-r-0 bg-[#f9f9f8] dark:bg-[#1a1c1c] z-40 py-8 bg-surface-container-low transition-colors duration-300">
+<!-- SideNav Header -->
+<div class="px-8 mb-12 flex flex-col items-start gap-4">
+<img alt="Crisis Command Center" class="w-12 h-12 rounded-full object-cover shadow-sm" data-alt="abstract geometric globe in deep teal and warm off-white representing a command center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYPM4QD5vVYp0pYZt2rwSCOrTE_P1INfCIzPGujZtpaXa4GclevScCqVzR4RfpYCnUtk74agOB2KP2qlZCLcTQcawFdzn-n24403phCZmrkqndU27lx4IqCuBjlIis7GwBfyUsp6TIkxcI7G3JlbPhIbOKN94JO6Q6elYxrwsuMvggPU6G2BeuVsr7yW2kG35xEFTRZ6UsvABij5xj9FJ6s3QEADEF74L2YTmcTsBSk8k8ZyB8auDYdX82VKWWU0cLbkv4U6GaqjeU"/>
+<div>
+<h2 class="font-['DM_Serif_Display'] italic text-xl text-[#005147] tracking-tight">Command &amp; Compassion</h2>
+<p class="font-['Inter'] uppercase tracking-widest text-[11px] font-bold text-slate-500 mt-1">Vanguard Level Access</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 flex flex-col gap-2">
+<!-- Active Nav Item -->
+<a class="bg-[#0a6b5e] text-white dark:bg-[#0a6b5e] rounded-r-full mr-4 px-6 py-4 shadow-lg shadow-[#005147]/20 flex items-center gap-4 cursor-pointer" href="#">
+<span class="material-symbols-outlined icon-fill">corporate_fare</span>
+<span class="font-['Inter'] tracking-wide text-sm font-semibold">NGO Registry</span>
+</a>
+<!-- Inactive Nav Items -->
+<a class="text-[#1a1c1c]/60 dark:text-white/60 px-6 py-4 hover:pl-8 hover:text-[#005147] dark:hover:text-white transition-all duration-300 flex items-center gap-4 cursor-pointer" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-['Inter'] tracking-wide text-sm font-medium">Resource Vault</span>
+</a>
+<a class="text-[#1a1c1c]/60 dark:text-white/60 px-6 py-4 hover:pl-8 hover:text-[#005147] dark:hover:text-white transition-all duration-300 flex items-center gap-4 cursor-pointer" href="#">
+<span class="material-symbols-outlined">settings_suggest</span>
+<span class="font-['Inter'] tracking-wide text-sm font-medium">Settings</span>
+</a>
+</nav>
+<!-- CTA & Footer -->
+<div class="mt-auto px-6 flex flex-col gap-6">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-on-primary py-3 rounded-lg font-medium text-sm tracking-wide shadow-md hover:shadow-lg transition-all active:scale-95 duration-150 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+                New Dispatch
+            </button>
+<div class="flex flex-col gap-1 border-t border-outline-variant/15 pt-4">
+<a class="text-[#1a1c1c]/60 dark:text-white/60 px-2 py-2 hover:text-[#005147] transition-all duration-300 flex items-center gap-4 cursor-pointer text-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+                    Help Center
+                </a>
+<a class="text-[#1a1c1c]/60 dark:text-white/60 px-2 py-2 hover:text-[#005147] transition-all duration-300 flex items-center gap-4 cursor-pointer text-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+                    Logout
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="ml-72 flex-1 flex flex-col h-full bg-surface relative">
+<!-- TopAppBar Component -->
+<header class="fixed top-0 w-[calc(100%-18rem)] z-50 bg-[#f9f9f8]/85 dark:bg-[#1a1c1c]/85 backdrop-blur-md shadow-[0px_12px_32px_rgba(0,81,71,0.06)] flex justify-between items-center px-8 h-20 bg-surface-container-low transition-colors duration-300">
+<div class="flex items-center gap-4">
+<h1 class="text-2xl font-bold font-serif text-[#005147] dark:text-[#0a6b5e] font-['DM_Serif_Display'] tracking-tight">Sahaay Sentinel</h1>
+</div>
+<!-- Search & Actions (search_bar: on_right) -->
+<div class="flex items-center gap-6">
+<!-- Inline subtle search for top bar context -->
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="bg-surface-container-lowest border border-outline-variant/20 rounded-full py-2 pl-10 pr-4 text-sm w-64 focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all placeholder:text-outline/70 text-on-surface" placeholder="Global search..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-[#0a6b5e]/10 transition-all active:scale-95 duration-150 relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-[#0a6b5e]/10 transition-all active:scale-95 duration-150">
+<span class="material-symbols-outlined text-error">emergency_share</span>
+</button>
+<div class="w-px h-6 bg-outline-variant/30 mx-2"></div>
+<img alt="Coordinator Profile" class="w-9 h-9 rounded-full object-cover ring-2 ring-surface-container-low cursor-pointer" data-alt="professional headshot of an indian male coordinator in a bright modern office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuE0JGR0xaWsG9CgJaPQfAYxDdiedFllcjmFW__2bPr1VwLTJAQxHh9or7Z62xEy1HU1QDZdEmUqpHoLHspDJFq6UYiG7_ZK6zliz5bHtHQoCfE6N8iFtNf8rshoqhYhLXVCCxSIOKl5EoqDygPnJOgSjEHLyndmj8VLdsibEYwVjsp4umjc9nbf1VfLmtx34as1_DcV5SluKQdObZ1VsOVR59KyADeWh7jnXSWptj8U0pYdztie_oNl1E0k6XAZ4wLRiBTWViFkSF"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 overflow-y-auto pt-28 px-10 pb-16">
+<!-- Page Header & Global Actions -->
+<div class="flex justify-between items-end mb-10">
+<div>
+<p class="font-label text-sm uppercase tracking-widest text-primary/70 mb-1 font-semibold">Directory</p>
+<h1 class="font-headline text-4xl text-on-surface tracking-tight leading-tight">Partner Registry</h1>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-3 rounded-lg font-medium text-sm tracking-wide shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    New Registration
+                </button>
+</div>
+<!-- Statistical Summary (Glassmorphism Cards) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+<!-- Stat Card 1 -->
+<div class="bg-surface-container-lowest/85 backdrop-blur-md p-6 rounded-[14px] border border-outline-variant/15 shadow-[0px_12px_32px_rgba(0,81,71,0.04)] relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<p class="font-label text-xs uppercase tracking-widest text-outline mb-2">Total Verified NGOs</p>
+<div class="flex items-baseline gap-3">
+<h2 class="font-headline text-5xl text-on-surface tracking-tight">412</h2>
+<span class="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">trending_up</span> +12 this month</span>
+</div>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-surface-container-lowest/85 backdrop-blur-md p-6 rounded-[14px] border border-outline-variant/15 shadow-[0px_12px_32px_rgba(0,81,71,0.04)] relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary-fixed-dim"></div>
+<p class="font-label text-xs uppercase tracking-widest text-outline mb-2">Active (Last 24h)</p>
+<div class="flex items-baseline gap-3">
+<h2 class="font-headline text-5xl text-on-surface tracking-tight">84</h2>
+<span class="text-xs text-outline flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">bolt</span> High deployment</span>
+</div>
+</div>
+<!-- Stat Card 3 -->
+<div class="bg-surface-container-lowest/85 backdrop-blur-md p-6 rounded-[14px] border border-outline-variant/15 shadow-[0px_12px_32px_rgba(0,81,71,0.04)] relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-[#d97706]"></div>
+<p class="font-label text-xs uppercase tracking-widest text-outline mb-2">Pending Verifications</p>
+<div class="flex items-baseline gap-3">
+<h2 class="font-headline text-5xl text-on-surface tracking-tight">17</h2>
+<span class="text-xs text-[#d97706] bg-[#d97706]/10 px-2 py-0.5 rounded-full font-medium">Requires review</span>
+</div>
+</div>
+</div>
+<!-- Filters Section -->
+<div class="bg-surface-container-low p-4 rounded-[14px] flex flex-wrap items-center gap-4 mb-8 border border-outline-variant/10">
+<div class="relative flex-1 min-w-[250px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-[9px] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-outline text-on-surface" placeholder="Search NGO name or contact..." type="text"/>
+</div>
+<div class="relative min-w-[180px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">location_on</span>
+<select class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-[9px] py-2.5 pl-10 pr-8 text-sm appearance-none focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-on-surface cursor-pointer">
+<option disabled="" selected="" value="">Select Ward</option>
+<option>Dharavi (Ward G/N)</option>
+<option>Kurla (Ward L)</option>
+<option>Andheri (Ward K/E)</option>
+<option>All Wards</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-[20px] pointer-events-none">expand_more</span>
+</div>
+<div class="relative min-w-[180px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">category</span>
+<select class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-[9px] py-2.5 pl-10 pr-8 text-sm appearance-none focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-on-surface cursor-pointer">
+<option disabled="" selected="" value="">Expertise Area</option>
+<option>Medical Aid</option>
+<option>Food Distribution</option>
+<option>Evacuation</option>
+<option>All Areas</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-[20px] pointer-events-none">expand_more</span>
+</div>
+<button class="bg-surface-container-lowest border border-outline-variant/20 text-on-surface px-4 py-2.5 rounded-[9px] text-sm font-medium hover:bg-surface-container-high transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+                    Advanced
+                </button>
+</div>
+<!-- NGO Data Grid (Bento Style) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- NGO Card 1 -->
+<div class="bg-surface-container-lowest rounded-[14px] p-6 shadow-[0px_12px_32px_rgba(0,81,71,0.03)] border border-outline-variant/15 flex flex-col relative overflow-hidden">
+<div class="absolute left-0 top-0 w-1.5 h-full bg-[#16a34a]"></div> <!-- Low Urgency / Active -->
+<div class="flex justify-between items-start mb-4 pl-2">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="font-headline text-2xl text-on-surface">Sanjivani Trust</h3>
+<span class="material-symbols-outlined text-primary text-[20px]" title="Verified Partner">verified</span>
+</div>
+<p class="text-xs text-outline flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span> Dharavi (Ward G/N)</p>
+</div>
+<span class="bg-[#16a34a]/10 text-[#16a34a] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">Active</span>
+</div>
+<div class="flex flex-wrap gap-2 mb-6 pl-2">
+<span class="bg-primary/5 text-primary border border-primary/20 text-xs px-3 py-1 rounded-full font-medium">Medical Aid</span>
+<span class="bg-primary/5 text-primary border border-primary/20 text-xs px-3 py-1 rounded-full font-medium">Ambulance</span>
+</div>
+<div class="mt-auto pt-4 border-t border-outline-variant/15 grid grid-cols-2 gap-4 pl-2">
+<div>
+<p class="text-[11px] text-outline uppercase tracking-wider mb-1">Contact</p>
+<p class="text-sm text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">person</span> Dr. Meera Desai</p>
+</div>
+<div>
+<p class="text-[11px] text-outline uppercase tracking-wider mb-1">Capacity</p>
+<p class="text-sm text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">groups</span> 45 Volunteers</p>
+</div>
+</div>
+</div>
+<!-- NGO Card 2 -->
+<div class="bg-surface-container-lowest rounded-[14px] p-6 shadow-[0px_12px_32px_rgba(0,81,71,0.03)] border border-outline-variant/15 flex flex-col relative overflow-hidden">
+<div class="absolute left-0 top-0 w-1.5 h-full bg-[#16a34a]"></div>
+<div class="flex justify-between items-start mb-4 pl-2">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="font-headline text-2xl text-on-surface">Aahar Foundation</h3>
+<span class="material-symbols-outlined text-primary text-[20px]" title="Verified Partner">verified</span>
+</div>
+<p class="text-xs text-outline flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span> Kurla (Ward L)</p>
+</div>
+<span class="bg-[#16a34a]/10 text-[#16a34a] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">Active</span>
+</div>
+<div class="flex flex-wrap gap-2 mb-6 pl-2">
+<span class="bg-primary/5 text-primary border border-primary/20 text-xs px-3 py-1 rounded-full font-medium">Food Distribution</span>
+<span class="bg-primary/5 text-primary border border-primary/20 text-xs px-3 py-1 rounded-full font-medium">Logistics</span>
+</div>
+<div class="mt-auto pt-4 border-t border-outline-variant/15 grid grid-cols-2 gap-4 pl-2">
+<div>
+<p class="text-[11px] text-outline uppercase tracking-wider mb-1">Contact</p>
+<p class="text-sm text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">person</span> Rahul Sharma</p>
+</div>
+<div>
+<p class="text-[11px] text-outline uppercase tracking-wider mb-1">Capacity</p>
+<p class="text-sm text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">groups</span> 120 Volunteers</p>
+</div>
+</div>
+</div>
+<!-- NGO Card 3 (AI Insight/High Priority context) -->
+<div class="bg-surface-container-lowest rounded-[14px] p-6 shadow-[0px_12px_32px_rgba(0,81,71,0.06)] border border-outline-variant/15 flex flex-col relative overflow-hidden bg-gradient-to-br from-surface-container-lowest to-tertiary-container/5">
+<div class="absolute left-0 top-0 w-1.5 h-full bg-[#d97706]"></div> <!-- High Amber -->
+<div class="flex justify-between items-start mb-4 pl-2">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="font-headline text-2xl text-on-surface">Jal Relief Squad</h3>
+<!-- Unverified so no checkmark -->
+</div>
+<p class="text-xs text-outline flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span> Andheri (Ward K/E)</p>
+</div>
+<span class="bg-[#d97706]/10 text-[#d97706] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">schedule</span> Pending</span>
+</div>
+<div class="flex flex-wrap gap-2 mb-6 pl-2">
+<span class="bg-tertiary-container/10 text-on-tertiary-fixed-variant border border-tertiary-container/20 text-xs px-3 py-1 rounded-full font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">auto_awesome</span> Flood Rescue</span>
+</div>
+<div class="mt-auto pt-4 border-t border-outline-variant/15 grid grid-cols-2 gap-4 pl-2">
+<div>
+<p class="text-[11px] text-outline uppercase tracking-wider mb-1">Contact</p>
+<p class="text-sm text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">person</span> Sarah Khan</p>
+</div>
+<div>
+<p class="text-[11px] text-outline uppercase tracking-wider mb-1">Capacity</p>
+<p class="text-sm text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">groups</span> 30 Volunteers</p>
+</div>
+</div>
+</div>
+<!-- NGO Card 4 -->
+<div class="bg-surface-container-lowest rounded-[14px] p-6 shadow-[0px_12px_32px_rgba(0,81,71,0.03)] border border-outline-variant/15 flex flex-col relative overflow-hidden">
+<div class="absolute left-0 top-0 w-1.5 h-full bg-[#16a34a]"></div>
+<div class="flex justify-between items-start mb-4 pl-2">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="font-headline text-2xl text-on-surface">Paws &amp; Claws Rescue</h3>
+<span class="material-symbols-outlined text-primary text-[20px]" title="Verified Partner">verified</span>
+</div>
+<p class="text-xs text-outline flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span> Citywide</p>
+</div>
+<span class="bg-[#16a34a]/10 text-[#16a34a] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">Active</span>
+</div>
+<div class="flex flex-wrap gap-2 mb-6 pl-2">
+<span class="bg-primary/5 text-primary border border-primary/20 text-xs px-3 py-1 rounded-full font-medium">Animal Rescue</span>
+</div>
+<div class="mt-auto pt-4 border-t border-outline-variant/15 grid grid-cols-2 gap-4 pl-2">
+<div>
+<p class="text-[11px] text-outline uppercase tracking-wider mb-1">Contact</p>
+<p class="text-sm text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">person</span> Amit Patel</p>
+</div>
+<div>
+<p class="text-[11px] text-outline uppercase tracking-wider mb-1">Capacity</p>
+<p class="text-sm text-on-surface font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">groups</span> 15 Volunteers</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

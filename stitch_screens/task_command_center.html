@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sahaay - Task Force Command Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#a1f2e1",
+                    "on-surface": "#1a1c1c",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#0a6b5e",
+                    "on-surface-variant": "#3e4946",
+                    "on-error": "#ffffff",
+                    "inverse-surface": "#2f3130",
+                    "background": "#f9f9f8",
+                    "tertiary-container": "#742fe5",
+                    "outline": "#6f7976",
+                    "on-tertiary-fixed": "#25005a",
+                    "surface-container": "#eeeeed",
+                    "on-secondary-container": "#007151",
+                    "primary": "#005147",
+                    "on-primary-fixed": "#00201b",
+                    "tertiary-fixed": "#eaddff",
+                    "surface-bright": "#f9f9f8",
+                    "secondary": "#006c4e",
+                    "primary-fixed-dim": "#85d5c5",
+                    "on-primary-container": "#98e8d8",
+                    "surface-container-high": "#e8e8e7",
+                    "on-secondary-fixed-variant": "#00513a",
+                    "secondary-fixed": "#86f8c9",
+                    "outline-variant": "#bec9c5",
+                    "on-primary-fixed-variant": "#005046",
+                    "surface-container-low": "#f3f4f3",
+                    "secondary-fixed-dim": "#68dbae",
+                    "inverse-primary": "#85d5c5",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#d2bbff",
+                    "tertiary": "#5b00c7",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "on-background": "#1a1c1c",
+                    "surface": "#f9f9f8",
+                    "on-tertiary-fixed-variant": "#5a00c6",
+                    "on-tertiary-container": "#e3d2ff",
+                    "on-secondary-fixed": "#002115",
+                    "inverse-on-surface": "#f1f1f0",
+                    "surface-tint": "#086a5d",
+                    "secondary-container": "#83f5c6",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#dadad9",
+                    "surface-variant": "#e2e2e2",
+                    "surface-container-highest": "#e2e2e2",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": ["DM Serif Display", "serif"],
+                    "body": ["Inter", "sans-serif"],
+                    "label": ["Inter", "sans-serif"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: theme('colors.background'); color: theme('colors.on-background'); }
+        h1, h2, h3, .font-headline { font-family: 'DM Serif Display', serif; }
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="hidden md:flex fixed left-0 top-0 h-screen w-64 z-50 bg-[#f9f9f8] flex-col py-8 px-4 border-r border-outline-variant/15">
+<div class="flex items-center gap-3 mb-10 px-2">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-headline text-xl">S</div>
+<div>
+<h1 class="font-headline text-3xl font-black text-[#005147] tracking-tight">Sahaay</h1>
+<p class="font-label text-[11px] uppercase tracking-widest text-on-surface-variant mt-0.5">MUMBAI WARD - 4</p>
+</div>
+</div>
+<div class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:text-[#005147] hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label text-sm font-medium">Command Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:text-[#005147] hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-label text-sm font-medium">Crisis Map</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-white text-[#005147] font-bold border-l-4 border-[#005147] shadow-[0px_4px_12px_rgba(0,81,71,0.04)]" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt" data-weight="fill" style="font-variation-settings: 'FILL' 1;">list_alt</span>
+<span class="font-label text-sm">Task Force</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:text-[#005147] hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="diversity_3">diversity_3</span>
+<span class="font-label text-sm font-medium">NGO Registry</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:text-[#005147] hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label text-sm font-medium">Resource Vault</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:text-[#005147] hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label text-sm font-medium">Settings</span>
+</a>
+</div>
+<div class="mt-auto space-y-4">
+<button class="w-full bg-gradient-to-br from-error to-[#93000a] text-on-error py-3 rounded-lg font-label text-sm font-semibold shadow-[0px_8px_16px_rgba(186,26,26,0.15)] hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="warning">warning</span>
+                Urgent Report
+            </button>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:text-[#005147] hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span class="font-label text-sm font-medium">Help Center</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-64 h-screen flex flex-col relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-full md:w-[calc(100%-16rem)] z-40 glass-panel shadow-[0px_12px_32px_rgba(0,81,71,0.06)] h-20 px-8 flex justify-between items-center">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-[9px] pl-10 pr-4 py-2.5 text-sm font-body text-on-surface focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary/20 transition-colors placeholder:text-outline" placeholder="Search tasks, volunteers, or resources..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-5 py-2.5 rounded-[8px] font-label text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 shadow-[0px_4px_12px_rgba(0,81,71,0.15)]">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                    Create Task
+                </button>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high flex items-center justify-center text-primary transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="w-10 h-10 rounded-full hover:bg-tertiary-container/20 flex items-center justify-center text-tertiary transition-colors">
+<span class="material-symbols-outlined" data-icon="sparkles">colors_spark</span>
+</button>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high flex items-center justify-center text-primary transition-colors">
+<img alt="Admin Profile" class="w-8 h-8 rounded-full object-cover" data-alt="professional headshot of an emergency dispatcher in a command center environment, warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtKfxN3vUjtsIZUkkbELu3FQJXVwcyrIcdVGRLIxg-eQpgh7Ktv96VXYErpHYkOzqoyFsim9aV80mpKj7SHpWx0AuwiHnuIiQe628-kLuD9cU3_j0gbNuhl-Xg_C2EOwtnnGF7V-a0t2oDrWD8i0if8kRPmOfJ0_rdHpT7hXW97sW_ueLjUXtU0C6MDnxAh39Zt7XMflck-6lEJrwnVAR8jGLZoc_wCwM3-3ac-DtdeMrR1HFIAUVNK7kvkWIEOeE0fiDQ8v-GlcPk"/>
+</button>
+</div>
+</div>
+</header>
+<!-- Board Content -->
+<div class="flex-1 overflow-x-auto overflow-y-hidden pt-24 pb-8 px-8 flex flex-col">
+<!-- Header & Filters -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8 shrink-0">
+<div>
+<h2 class="font-headline text-4xl text-on-surface tracking-tight mb-2">Task Board</h2>
+<p class="font-body text-on-surface-variant text-sm">Managing 142 active assignments across 8 zones.</p>
+</div>
+<div class="flex items-center gap-3">
+<select class="bg-surface-container-lowest border border-outline-variant/30 rounded-[9px] px-3 py-2 text-sm font-label text-on-surface focus:ring-1 focus:ring-primary/20">
+<option>Sort: Urgency (High to Low)</option>
+<option>Sort: Date Created</option>
+<option>Sort: Due Date</option>
+</select>
+<button class="bg-surface-container-lowest border border-outline-variant/30 rounded-[9px] px-3 py-2 text-sm font-label text-on-surface flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="filter_list">filter_list</span>
+                        Filters (2)
+                    </button>
+</div>
+</div>
+<!-- Kanban Lanes -->
+<div class="flex-1 flex gap-6 min-w-max pb-4">
+<!-- Lane 1: Open -->
+<div class="w-[320px] flex flex-col gap-4 bg-surface-container-low rounded-xl p-4">
+<div class="flex justify-between items-center px-1">
+<h3 class="font-label font-semibold text-on-surface text-sm uppercase tracking-wider">Open <span class="text-outline ml-1">12</span></h3>
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-sm" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
+<!-- Card: High Priority -->
+<div class="bg-surface-container-lowest rounded-[14px] p-4 relative overflow-hidden group cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#d97706]"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="bg-surface-container px-2 py-0.5 rounded text-[11px] font-label font-medium text-on-surface-variant">#TSK-892</span>
+<span class="bg-[#d97706]/10 text-[#d97706] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">High</span>
+</div>
+<h4 class="font-body font-medium text-on-surface text-sm leading-tight mb-3">Medical Supply Delivery - Relief Camp Alpha</h4>
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-[14px] text-outline" data-icon="location_on">location_on</span>
+<span class="font-body text-xs text-on-surface-variant truncate">Sector 4, Andheri East</span>
+</div>
+<div class="flex justify-between items-center mt-4">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest border border-surface-container-lowest flex items-center justify-center text-[10px] text-on-surface-variant font-medium">Unassigned</div>
+</div>
+<span class="font-label text-xs text-outline">Created 2h ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lane 2: Assigned -->
+<div class="w-[320px] flex flex-col gap-4 bg-surface-container-low rounded-xl p-4">
+<div class="flex justify-between items-center px-1">
+<h3 class="font-label font-semibold text-on-surface text-sm uppercase tracking-wider">Assigned <span class="text-outline ml-1">28</span></h3>
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-sm" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
+<!-- Card: Standard -->
+<div class="bg-surface-container-lowest rounded-[14px] p-4 relative group cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="bg-surface-container px-2 py-0.5 rounded text-[11px] font-label font-medium text-on-surface-variant">#TSK-885</span>
+<span class="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Routine</span>
+</div>
+<h4 class="font-body font-medium text-on-surface text-sm leading-tight mb-3">Water Distribution Coordinate - Zone B</h4>
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-[14px] text-outline" data-icon="category">category</span>
+<span class="font-body text-xs text-on-surface-variant truncate">Logistics</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5 mb-4">
+<div class="bg-primary h-1.5 rounded-full" style="width: 25%"></div>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<img alt="Volunteer" class="w-6 h-6 rounded-full object-cover border border-surface-container-lowest" data-alt="portrait of a female volunteer wearing a yellow vest, bright daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPWZoMGNDjtA8lBnnx0asegNXWByGUiPrpNAsOPtDWayIJP6u6lvP-yXCFv0QppxHSj-zFD_7DCRvjB7w5MORqeE_OPfoh67HJoWNqBS8Rdibvfjqb3YrPUAO31mG--3-IGVLcyD1NjfBHlBvVfqupRHZzSnNB_MuVBiqPk4-BCod0O1vaump01fw_psGPeWrD72JzAtOYkn0pdfzYDMjGjROURfGVhrr_rVIaiCHLmuOBUsfmvTl-FDRaANejkof2-MOaoU6A1dMm"/>
+<span class="font-label text-xs font-medium text-on-surface">Priya M.</span>
+</div>
+<span class="font-label text-xs text-outline">Due Today</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lane 3: In Progress -->
+<div class="w-[320px] flex flex-col gap-4 bg-surface-container-low rounded-xl p-4">
+<div class="flex justify-between items-center px-1">
+<h3 class="font-label font-semibold text-on-surface text-sm uppercase tracking-wider">In Progress <span class="text-outline ml-1">45</span></h3>
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-sm" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
+<!-- Card: Critical/Overdue -->
+<div class="bg-error-container/20 border border-error/20 rounded-[14px] p-4 relative group cursor-pointer hover:bg-error-container/30 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="bg-white/50 px-2 py-0.5 rounded text-[11px] font-label font-medium text-on-surface-variant">#TSK-842</span>
+<span class="bg-error text-on-error px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]" data-icon="timer">timer</span> OVERDUE
+                                </span>
+</div>
+<h4 class="font-body font-medium text-on-surface text-sm leading-tight mb-3">Evacuation Assistance - Riverfront Settlment</h4>
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-[14px] text-error" data-icon="crisis_alert">crisis_alert</span>
+<span class="font-body text-xs text-error font-medium truncate">Emergency Rescue</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5 mb-4">
+<div class="bg-error h-1.5 rounded-full" style="width: 80%"></div>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex -space-x-2">
+<img alt="Volunteer" class="w-6 h-6 rounded-full object-cover border border-white" data-alt="portrait of a male rescue worker in uniform, serious expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6vghhiRMv-69xMvz8L_-s5SgcIurYZVFF06hHr-qHWjoBXHKOVq1JUYecEHkHaUmdIL9SqaAf9eKOHZzmcZWlTk6bG854E0iC5GEcszAIpNIEWiWYClPSJrwdDQauNWO50b3to0FM4aoPU3Ye0YCSmbiKRZ6CCT_vrpWH8bSrbH6o349IagvPsq1BQmWEDAlJtQY-RTxlX5q2OAlEJIuRXAlShaWHqqDSJwdsYkGBkrJqbr63GVgTknV2Dhs4rZs8D-fHO7S40UQL"/>
+<img alt="Volunteer" class="w-6 h-6 rounded-full object-cover border border-white" data-alt="portrait of a female rescue worker, focused expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmruZRM1SZQdoyrDiyPQgPJkSGGzqOz3XSYwiLXjnyAenVZn8bzAtQ2S8EB680S3IPMTjOanHWolnYqeYvBl-jX_Glu2bmFk1ruS-k9uPoZLJx3zPuvdWtDudVelprsqvb_q17qfmDFOpW6deMcOY5BJXEdMnYitgwMPtpo_vMzeKkUW8kdSwkHPiemK6xw-lEZFlMGjARIuhmLltrHxh9_D4Dil5l-uqw16_wGhdjJfGdQWpGWuyPd-0iKZ5QLESrI_Lfq7HFrf_r"/>
+</div>
+<span class="font-label text-xs font-bold text-error">-2h 15m</span>
+</div>
+</div>
+<!-- AI Insight Card -->
+<div class="bg-gradient-to-br from-tertiary-container/10 to-primary-container/5 border border-tertiary/20 rounded-[14px] p-4 relative group cursor-pointer backdrop-blur-sm">
+<div class="flex justify-between items-start mb-2">
+<span class="material-symbols-outlined text-tertiary text-lg" data-icon="sparkles">colors_spark</span>
+<span class="bg-tertiary text-on-tertiary px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Insight</span>
+</div>
+<h4 class="font-body font-medium text-on-surface text-sm leading-tight mb-2">Resource Bottleneck Detected</h4>
+<p class="font-body text-xs text-on-surface-variant mb-3">3 teams in Zone C are waiting on transport. Reallocating Idle Fleet 4 could resolve in 15 mins.</p>
+<button class="text-tertiary font-label text-xs font-semibold hover:underline">Review AI Suggestion</button>
+</div>
+</div>
+</div>
+<!-- Lane 4: Resolved -->
+<div class="w-[320px] flex flex-col gap-4 bg-surface-container-low rounded-xl p-4 opacity-75">
+<div class="flex justify-between items-center px-1">
+<h3 class="font-label font-semibold text-on-surface text-sm uppercase tracking-wider">Resolved <span class="text-outline ml-1">104</span></h3>
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-sm" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
+<!-- Card: Resolved -->
+<div class="bg-surface-container-lowest rounded-[14px] p-4 relative grayscale-[0.5]">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#16a34a]"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="bg-surface-container px-2 py-0.5 rounded text-[11px] font-label font-medium text-outline">#TSK-821</span>
+<span class="text-[#16a34a] flex items-center"><span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span></span>
+</div>
+<h4 class="font-body font-medium text-outline text-sm leading-tight line-through mb-3">Debris Clearing Main St.</h4>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2 opacity-60">
+<img alt="Volunteer" class="w-6 h-6 rounded-full object-cover grayscale" data-alt="portrait of a volunteer smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMCEmy5ZjixVOmolOoOzPgl10kFxlgsfz0O-GlpZrgf9TtPaKDxpk0Rw7N87cxFjpy3cv4yjpf7UzPawpOCN2TrG6ZXadjNxdQ7LYn2-p4IAIlckhfb2CNhRXA6AY49Km9_aqU1VUxYHs7LztXKyH5YpWPJ77a4Vjn2GqOTm6UCjeuSFg-EkwCZkLzk3SsfaQpx7EAgKKJ5nXEp3m0O_LT-_CN2e2ADKzpjYUAUP-VW2_VM8z_PHUp3au69zp4VcRVsrqZY8NhB7Qf"/>
+</div>
+<span class="font-label text-xs text-outline">Closed Yesterday</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
