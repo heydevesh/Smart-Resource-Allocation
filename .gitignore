@@ -68,5 +68,5 @@ testem.log
 Thumbs.db
 
 # Markdown files (ignored as requested)
-*.md
-
+AGENTS.md
+DESIGN.md
