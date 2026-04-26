@@ -81,7 +81,6 @@ graph TD
    go mod tidy
    # Deploy functions (see AGENTS.md for details)
    ```
-
 ---
 
 ## 🛡 Security & Compliance

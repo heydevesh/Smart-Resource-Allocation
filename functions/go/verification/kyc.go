@@ -71,14 +71,16 @@ type KYCResponse struct {
 }
 
 func setCORS(w http.ResponseWriter, r *http.Request) bool {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	if requested := r.Header.Get("Access-Control-Request-Headers"); requested != "" {
-		w.Header().Set("Access-Control-Allow-Headers", requested)
-	} else {
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID")
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		origin = "*"
 	}
-	w.Header().Set("Vary", "Access-Control-Request-Headers")
+
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID, X-Requested-With")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Vary", "Origin, Access-Control-Request-Headers")
 
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
@@ -168,7 +170,7 @@ func OcrAadhaar(w http.ResponseWriter, r *http.Request) {
 	if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
 		if text, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
 			responseBody := map[string]json.RawMessage{
-				"data": json.RawMessage(text),
+				"result": json.RawMessage(text),
 			}
 			_ = json.NewEncoder(w).Encode(responseBody)
 			return
@@ -253,7 +255,7 @@ func VerifyKYC(w http.ResponseWriter, r *http.Request) {
 	if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
 		if text, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
 			responseBody := map[string]json.RawMessage{
-				"data": json.RawMessage(text),
+				"result": json.RawMessage(text),
 			}
 			_ = json.NewEncoder(w).Encode(responseBody)
 			return

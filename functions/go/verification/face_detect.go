@@ -33,14 +33,17 @@ type FaceDetectionResult struct {
 
 func DetectFace(w http.ResponseWriter, r *http.Request) {
 	// CORS
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	if requested := r.Header.Get("Access-Control-Request-Headers"); requested != "" {
-		w.Header().Set("Access-Control-Allow-Headers", requested)
-	} else {
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID")
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		origin = "*"
 	}
-	w.Header().Set("Vary", "Access-Control-Request-Headers")
+
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID, X-Requested-With")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Vary", "Origin, Access-Control-Request-Headers")
+
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -101,5 +104,5 @@ func DetectFace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	json.NewEncoder(w).Encode(map[string]any{"result": result})
 }

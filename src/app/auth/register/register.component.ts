@@ -107,7 +107,7 @@ import { NgoDocument } from '../../models';
                 </div>
               </div>
 
-              <button type="button" class="next-btn" [disabled]="personalForm.invalid" (click)="currentStep.set(1)">
+              <button type="button" class="next-btn" (click)="goToStep(1)">
                 Continue <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">arrow_forward</mat-icon>
               </button>
             </form>
@@ -174,17 +174,23 @@ import { NgoDocument } from '../../models';
                 <div class="row-2">
                   <div class="field-group">
                     <label class="field-label">NGO Name</label>
-                    <div class="input-wrapper">
+                    <div class="input-wrapper" [class.invalid]="roleForm.get('ngoName')?.invalid && roleForm.get('ngoName')?.touched">
                       <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">business</mat-icon></span>
                       <input class="auth-input" formControlName="ngoName" placeholder="Organization Name">
                     </div>
+                    @if (roleForm.get('ngoName')?.invalid && roleForm.get('ngoName')?.touched) {
+                      <span class="error-text">NGO Name is required</span>
+                    }
                   </div>
                   <div class="field-group">
                     <label class="field-label">Official Email</label>
-                    <div class="input-wrapper">
+                    <div class="input-wrapper" [class.invalid]="roleForm.get('ngoEmail')?.invalid && roleForm.get('ngoEmail')?.touched">
                       <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">mail</mat-icon></span>
                       <input class="auth-input" type="email" formControlName="ngoEmail" placeholder="contact@ngo.org">
                     </div>
+                    @if (roleForm.get('ngoEmail')?.invalid && roleForm.get('ngoEmail')?.touched) {
+                      <span class="error-text">Valid official email is required</span>
+                    }
                   </div>
                 </div>
 
@@ -210,11 +216,14 @@ import { NgoDocument } from '../../models';
 
                 <div class="field-group">
                   <label class="field-label">About the NGO</label>
-                  <div class="input-wrapper">
+                  <div class="input-wrapper" [class.invalid]="roleForm.get('ngoDescription')?.invalid && roleForm.get('ngoDescription')?.touched">
                     <span class="input-icon" style="align-self:flex-start;margin-top:12px"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">description</mat-icon></span>
                     <textarea class="auth-input auth-textarea" formControlName="ngoDescription" 
                       placeholder="Describe your organization's mission and history (min 20 chars)" rows="3"></textarea>
                   </div>
+                  @if (roleForm.get('ngoDescription')?.invalid && roleForm.get('ngoDescription')?.touched) {
+                    <span class="error-text">Description must be at least 20 characters</span>
+                  }
                 </div>
 
                 <div class="field-group">
@@ -229,6 +238,9 @@ import { NgoDocument } from '../../models';
                       </button>
                     }
                   </div>
+                  @if (roleForm.get('ngoFocusAreas')?.invalid && roleForm.get('ngoFocusAreas')?.touched) {
+                    <span class="error-text">Select at least one focus area</span>
+                  }
                 </div>
 
                 <div class="field-group">
@@ -254,7 +266,7 @@ import { NgoDocument } from '../../models';
                   </div>
                   <div class="field-group">
                     <label class="field-label">Operating Region</label>
-                    <div class="input-wrapper">
+                    <div class="input-wrapper" [class.invalid]="roleForm.get('region')?.invalid && roleForm.get('region')?.touched">
                       <span class="input-icon"><mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">location_on</mat-icon></span>
                       <select class="auth-input auth-select" formControlName="region">
                         <option value="">Select region</option>
@@ -264,6 +276,9 @@ import { NgoDocument } from '../../models';
                         <option value="Bhandup">Bhandup</option>
                       </select>
                     </div>
+                    @if (roleForm.get('region')?.invalid && roleForm.get('region')?.touched) {
+                      <span class="error-text">Operating region is required</span>
+                    }
                   </div>
                 </div>
 
@@ -290,7 +305,7 @@ import { NgoDocument } from '../../models';
                 <button type="button" class="back-btn" (click)="currentStep.set(0)">
                   <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">arrow_back</mat-icon> Back
                 </button>
-                <button type="button" class="next-btn" [disabled]="roleForm.invalid" (click)="currentStep.set(2)">
+                <button type="button" class="next-btn" (click)="goToStep(2)">
                   Continue <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">arrow_forward</mat-icon>
                 </button>
               </div>
@@ -437,7 +452,7 @@ import { NgoDocument } from '../../models';
               </button>
 
               <button type="button" class="submit-btn" 
-                      [disabled]="submitting() || !aadhaarFile()"
+                      [disabled]="submitting() || !canSubmit()"
                       (click)="submitRegistration(false)">
                 @if (submitting()) {
                     <span class="btn-spinner"></span> Submitting...
@@ -493,6 +508,24 @@ export class RegisterComponent {
 
   nextStep() { this.currentStep.update(s => s + 1); }
   prevStep() { this.currentStep.update(s => s - 1); }
+
+  goToStep(step: number) {
+    if (step > this.currentStep()) {
+      if (this.currentStep() === 0) {
+        if (this.personalForm.invalid) {
+          this.personalForm.markAllAsTouched();
+          return;
+        }
+      } else if (this.currentStep() === 1) {
+        if (this.roleForm.invalid) {
+          this.roleForm.markAllAsTouched();
+          return;
+        }
+      }
+    }
+    this.currentStep.set(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   aadhaarNumber = '';
   aadhaarFile = signal<File | null>(null);
