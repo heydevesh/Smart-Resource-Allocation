@@ -54,35 +54,6 @@ graph TD
 
 ---
 
-## 🛠 Getting Started
-
-### Prerequisites
-- Node.js v18+
-- Go 1.21+
-- Firebase CLI
-- Google Cloud SDK
-
-### Local Development
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/89Aman/Smart-Resource-Allocation.git
-   cd Smart-Resource-Allocation
-   ```
-
-2. **Frontend Setup:**
-   ```bash
-   npm install
-   ng serve
-   ```
-
-3. **Backend Setup:**
-   ```bash
-   cd functions/go
-   go mod tidy
-   # Deploy functions (see AGENTS.md for details)
-   ```
----
-
 ## 🛡 Security & Compliance
 
 Sahaay implements strict security protocols:
@@ -90,18 +61,6 @@ Sahaay implements strict security protocols:
 2. **App Check:** Enforced at the infrastructure level to block unauthorized API traffic.
 3. **Role-Based Access:** Granular permissions for Field Workers, Volunteers, Admins, and Founders.
 4. **Data Sovereignty:** Firestore security rules ensure data is only accessible to authorized organizational members.
-
----
-
-## 🗺 Roadmap & Status
-
-| Feature | Status | Description |
-| :--- | :--- | :--- |
-| **NGO Onboarding** | ✅ | Secure registration + KYC flow |
-| **AI Matching** | ✅ | Skill-based volunteer allocation |
-| **Needs Map** | ✅ | Real-time pin tracking + clustering |
-| **Resource Vault** | ✅ | Encrypted document storage for IDs |
-| **Surge Prediction**| ✅ | Historical analysis for Monsoon spikes |
 
 ---
 
@@ -113,4 +72,4 @@ Sahaay implements strict security protocols:
 
 ---
 
-© 2024 Sahaay Team. Built for Mumbai, by Mumbai.
+© 2026 Sahaay Team. Built for Mumbai, by SideQuest.
