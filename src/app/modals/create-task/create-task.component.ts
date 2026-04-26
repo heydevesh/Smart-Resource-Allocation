@@ -9,6 +9,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { FirestoreService } from '../../core/firebase/firestore.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { TaskContact } from '../../models';
+import { Timestamp } from '@angular/fire/firestore';
+import type { Task } from '../../models';
 
 @Component({
   selector: 'app-create-task',
@@ -137,16 +140,60 @@ export class CreateTaskComponent {
       this.loading = true;
       try {
         const user = this.auth.currentUser;
-        const taskData = {
-          ...this.taskForm.value,
+        const now = new Date();
+        const v = this.taskForm.getRawValue();
+
+        const safeCategory: Task['category'] =
+          v.category === 'food' ||
+          v.category === 'medical' ||
+          v.category === 'education' ||
+          v.category === 'shelter' ||
+          v.category === 'water'
+            ? v.category
+            : 'other';
+
+        const safePriority: Task['priority'] =
+          v.priority === 'low' ||
+          v.priority === 'medium' ||
+          v.priority === 'high'
+            ? v.priority
+            : 'critical';
+
+        const taskData: Partial<Task> = {
+          title: v.title ?? '',
+          category: safeCategory,
+          priority: safePriority,
+          locationName: v.locationName ?? '',
+          description: v.description ?? '',
+          locationLat: v.locationLat ?? 0,
+          locationLng: v.locationLng ?? 0,
           createdBy: user?.uid || 'system',
+          dueAt: Timestamp.fromDate(now),
           volunteerIds: [],
           progress: 0,
           status: 'pending',
           attachmentUrls: [],
-          recurring: false
+          recurring: false,
         };
-        await this.firestore.addTask(taskData as any);
+
+        const taskId = await this.firestore.addTask(taskData);
+
+        // Contacts are stored separately and unlocked only after volunteer acceptance.
+        if (user?.uid) {
+          const contact: TaskContact = {
+            id: taskId,
+            taskId,
+            primary: {
+              name: user.displayName || 'Coordinator',
+              phone: user.phone,
+              whatsapp: user.phone,
+            },
+            createdBy: user.uid,
+            createdAt: now,
+            region: user.region,
+          };
+          await this.firestore.upsertTaskContact(contact);
+        }
         await this.firestore.logActivity({
           type: 'task_created',
           text: `New operation <b>${taskData.title}</b> deployed in ${taskData.locationName}.`,

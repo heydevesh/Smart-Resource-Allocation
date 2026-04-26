@@ -22,5 +22,5 @@ export const environment = {
   vertexAiProject: 'sahaay-18eb3',
 
   // ── Firebase App Check (reCAPTCHA v3) ────────────────────────
-  recaptchaSiteKey: 'REPLACE_WITH_RECAPTCHA_V3_SITE_KEY',
+  recaptchaSiteKey: '',
 };

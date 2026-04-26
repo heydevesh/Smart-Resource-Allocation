@@ -1,31 +1,41 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // --- HELPERS ---
-    
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-    
+
     function hasRole(role) {
       return isAuthenticated() && getUserData().role == role;
     }
-    
+
     function hasAnyRole(roles) {
       return isAuthenticated() && getUserData().role in roles;
     }
-    
+
     function isOwner(uid) {
       return isAuthenticated() && request.auth.uid == uid;
     }
-    
+
     function isSameRegion(resourceData) {
       return resourceData.region == getUserData().region;
+    }
+
+    function assignmentDocId(taskId, volunteerId) {
+      return taskId + '_' + volunteerId;
+    }
+
+    function hasAcceptedAssignment(taskId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/taskAssignments/$(assignmentDocId(taskId, request.auth.uid))) &&
+        get(/databases/$(database)/documents/taskAssignments/$(assignmentDocId(taskId, request.auth.uid))).data.status == 'accepted';
     }
 
     // --- COLLECTIONS ---
@@ -33,13 +43,13 @@ service cloud.firestore {
     // Users Collection (Auth & Profiles)
     match /users/{uid} {
       allow read: if isAuthenticated() && (
-        isOwner(uid) || 
+        isOwner(uid) ||
         hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) ||
         (hasRole('field_lead') && isSameRegion(resource.data))
       );
       allow create: if isAuthenticated() && isOwner(uid);
       allow update: if isAuthenticated() && (
-        isOwner(uid) || 
+        isOwner(uid) ||
         hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin'])
       );
       allow delete: if hasRole('super_admin');
@@ -48,13 +58,11 @@ service cloud.firestore {
     // Volunteers Collection (Verified Profiles)
     match /volunteers/{volId} {
       allow read: if isAuthenticated() && (
-        isOwner(volId) || 
-        hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) ||
-        (hasRole('field_lead') && isSameRegion(resource.data))
+        hasAnyRole(['volunteer', 'field_lead', 'ngo_founder', 'ngo_admin', 'super_admin'])
       );
       allow create: if hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']);
       allow update: if isAuthenticated() && (
-        isOwner(volId) || 
+        isOwner(volId) ||
         hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin'])
       );
       allow delete: if hasRole('super_admin');
@@ -69,7 +77,7 @@ service cloud.firestore {
         hasAnyRole(['volunteer', 'field_lead', 'ngo_founder', 'ngo_admin', 'super_admin'])
       );
       allow update: if isAuthenticated() && (
-        hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) || 
+        hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) ||
         (hasRole('field_lead') && isSameRegion(resource.data))
       );
       allow delete: if hasRole('super_admin');
@@ -78,23 +86,73 @@ service cloud.firestore {
     // Tasks Collection (Assigned Operations)
     match /tasks/{taskId} {
       allow read: if isAuthenticated() && (
-        hasRole('super_admin') ||
-        (hasAnyRole(['ngo_founder', 'ngo_admin', 'field_lead']) && isSameRegion(resource.data)) ||
+        hasAnyRole(['volunteer', 'field_lead', 'ngo_founder', 'ngo_admin', 'super_admin']) ||
         (request.auth.uid in resource.data.volunteerIds)
       );
       allow create: if hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin', 'field_lead']);
       allow update: if isAuthenticated() && (
         hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) ||
         (hasRole('field_lead') && isSameRegion(resource.data)) ||
-        (request.auth.uid in resource.data.volunteerIds)
+        (request.auth.uid in resource.data.volunteerIds) ||
+        hasAcceptedAssignment(taskId)
       );
       allow delete: if hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']);
+    }
+
+    // Task Assignments (Volunteer requests)
+    match /taskAssignments/{assignmentId} {
+      allow read: if isAuthenticated() && (
+        hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) ||
+        (hasRole('field_lead') && isSameRegion(resource.data)) ||
+        (resource.data.volunteerId == request.auth.uid)
+      );
+
+      allow create: if isAuthenticated() && (
+        hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) ||
+        (hasRole('field_lead') && request.resource.data.region == getUserData().region)
+      )
+      && request.resource.data.requestedBy == request.auth.uid
+      && request.resource.data.status == 'pending';
+
+      allow update: if isAuthenticated() && (
+        // volunteer response
+        (
+          resource.data.volunteerId == request.auth.uid &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status in ['accepted', 'declined']
+        )
+        ||
+        // coordinator/admin cancel
+        (
+          (hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) || (hasRole('field_lead') && isSameRegion(resource.data))) &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status == 'cancelled'
+        )
+      );
+
+      allow delete: if false;
+    }
+
+    // Task Contacts (contact unlocked only after acceptance)
+    match /taskContacts/{taskId} {
+      allow read: if isAuthenticated() && (
+        hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) ||
+        (hasRole('field_lead') && isSameRegion(resource.data)) ||
+        hasAcceptedAssignment(taskId)
+      );
+
+      allow create, update: if isAuthenticated() && (
+        hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) ||
+        (hasRole('field_lead') && request.resource.data.region == getUserData().region)
+      ) && request.resource.data.createdBy == request.auth.uid;
+
+      allow delete: if hasRole('super_admin');
     }
 
     // Activities Collection (Audit Log)
     match /activities/{activityId} {
       allow read: if isAuthenticated() && (
-        hasAnyRole(['ngo_founder', 'ngo_admin', 'super_admin']) ||
+        hasAnyRole(['volunteer', 'field_lead', 'ngo_founder', 'ngo_admin', 'super_admin']) ||
         (hasRole('field_lead') && isSameRegion(resource.data)) ||
         resource.data.userId == request.auth.uid
       );

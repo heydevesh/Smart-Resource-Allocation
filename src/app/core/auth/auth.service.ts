@@ -11,6 +11,10 @@ export class AuthService {
   private auth = inject(Auth);
   private firestore = inject(Firestore);
 
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
   private currentUserSubject = new BehaviorSubject<User | null | undefined>(undefined);
   currentUser$ = this.currentUserSubject.asObservable();
 
@@ -122,12 +126,14 @@ export class AuthService {
   }
 
   async loginWithEmail(email: string, pass: string) {
-    const result = await signInWithEmailAndPassword(this.auth, email, pass);
+    const normalizedEmail = this.normalizeEmail(email);
+    const result = await signInWithEmailAndPassword(this.auth, normalizedEmail, pass);
     return result;
   }
 
   async registerWithEmail(email: string, pass: string) {
-    const result = await createUserWithEmailAndPassword(this.auth, email, pass);
+    const normalizedEmail = this.normalizeEmail(email);
+    const result = await createUserWithEmailAndPassword(this.auth, normalizedEmail, pass);
     await this.createInitialUserDoc(
       result.user.uid,
       result.user.email || '',

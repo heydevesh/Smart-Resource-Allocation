@@ -35,7 +35,12 @@ func DetectFace(w http.ResponseWriter, r *http.Request) {
 	// CORS
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	if requested := r.Header.Get("Access-Control-Request-Headers"); requested != "" {
+		w.Header().Set("Access-Control-Allow-Headers", requested)
+	} else {
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID")
+	}
+	w.Header().Set("Vary", "Access-Control-Request-Headers")
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusNoContent)
 		return

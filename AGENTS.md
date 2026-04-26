@@ -792,10 +792,15 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 | ------ | ---------------------------------------------------- |
 | ✅     | AGENTS.md rewrite — Vertex AI + Go architecture      |
 | ✅     | NGO Founder role — primary registration path         |
-| 🔄     | Angular 18 init + AgentService                       |
-| ⏳     | GCP APIs enabled + 5 Vertex AI agents created        |
-| ⏳     | Go module init + CallAgent deployed                  |
-| ⏳     | Firebase Auth + App Check + role guards              |
+| ✅     | Angular 18 init + AgentService                       |
+| ✅     | GCP APIs enabled + 5 Vertex AI agents created        |
+| ✅     | Go module init + CallAgent deployed                  |
+| ✅     | IAM Permissions granted (Cross-project AI/Firestore) |
+| ✅     | Cloud Run Auth (Public invoker + Internal Firebase Auth) |
+| 🔄     | Firebase Auth + App Check + role guards              |
+| ✅     | Registration Flow — Skip verification + success screen |
+| ✅     | AI Agent Fixes — us-west1 endpoint + input wrapping   |
+
 | ⏳     | Firestore service + offline persistence              |
 | ⏳     | Home tab — real-time dashboard                       |
 | ⏳     | Needs Map — Maps + pins + heatmap                    |

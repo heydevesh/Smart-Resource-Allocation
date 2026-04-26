@@ -1,5 +1,7 @@
 export * from './need.model';
 export * from './task.model';
+export * from './task-assignment.model';
+export * from './task-contact.model';
 export * from './volunteer.model';
 export * from './user.model';
 export * from './ai-match.model';

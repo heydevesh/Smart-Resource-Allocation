@@ -8,7 +8,7 @@ import { CreateTaskComponent } from '../../modals/create-task/create-task.compon
 import { TaskDetailComponent } from '../../modals/task-detail/task-detail.component';
 import { TaskCardComponent } from '../../shared/components/task-card/task-card.component';
 import { SkeletonLoaderComponent } from '../../shared/components/skeleton-loader/skeleton-loader.component';
-import { Task } from '../../models';
+import { Task, TaskAssignment } from '../../models';
 import { FirestoreService } from '../../core/firebase/firestore.service';
 import { SearchService } from '../../core/ui/search.service';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -17,6 +17,8 @@ import { GeolocationService } from '../../core/maps/geolocation.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { MatDividerModule } from '@angular/material/divider';
+import { filter, of, switchMap } from 'rxjs';
+import type { User } from '../../models';
 
 @Component({
   selector: 'app-tasks',
@@ -24,6 +26,16 @@ import { MatDividerModule } from '@angular/material/divider';
   imports: [CommonModule, MatIconModule, MatButtonModule, MatMenuModule, MatDialogModule, MatDividerModule, TaskCardComponent, SkeletonLoaderComponent],
   template: `
     <div class="board-wrapper">
+      <section class="my-requests" *ngIf="isVolunteer() && myRequestedTasks().length > 0">
+        <div class="my-requests-header">
+          <h3>My Requests</h3>
+          <span class="pill">{{ myRequestedTasks().length }} pending</span>
+        </div>
+        <div class="my-requests-row">
+          <app-task-card *ngFor="let task of myRequestedTasks()" [task]="task" (cardClick)="openTaskDetail($event)"></app-task-card>
+        </div>
+      </section>
+
       <div class="board-controls">
         <div class="stats-row">
           <div class="stat-item">
@@ -170,6 +182,41 @@ import { MatDividerModule } from '@angular/material/divider';
     </div>
   `,
   styles: [`
+    .my-requests {
+      padding: 0 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .my-requests-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .my-requests-header h3 {
+      margin: 0;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-secondary);
+    }
+    .pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+    .my-requests-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+    .my-requests-row app-task-card { min-width: 280px; }
+
     .board-wrapper {
       height: 100%;
       display: flex;
@@ -430,6 +477,24 @@ export class TasksComponent implements OnInit {
   private geo = inject(GeolocationService);
   private snackBar = inject(MatSnackBar);
   auth = inject(AuthService);
+
+  private user$ = this.auth.currentUser$.pipe(filter((u): u is User | null => u !== undefined));
+  user = toSignal(this.user$, { initialValue: null });
+
+  private pendingAssignments$ = this.user$.pipe(
+    switchMap((u) => (u?.role === 'volunteer' ? this.firestore.getVolunteerTaskAssignments(u.uid, ['pending']) : of([] as TaskAssignment[]))),
+  );
+
+  pendingAssignments = toSignal(this.pendingAssignments$, { initialValue: [] as TaskAssignment[] });
+
+  private myRequestedTasks$ = this.pendingAssignments$.pipe(
+    switchMap((as) => {
+      const ids = Array.from(new Set(as.map((a) => a.taskId))).slice(0, 10);
+      return this.firestore.getTasksByIds(ids);
+    }),
+  );
+
+  myRequestedTasks = toSignal(this.myRequestedTasks$, { initialValue: [] as Task[] });
   
   tasks = toSignal(this.firestore.getAllTasks(), { initialValue: [] });
   isLoading = signal<boolean>(true);
@@ -438,6 +503,10 @@ export class TasksComponent implements OnInit {
 
   ngOnInit() {
     setTimeout(() => this.isLoading.set(false), 2000);
+  }
+
+  isVolunteer() {
+    return this.user()?.role === 'volunteer';
   }
   searchTerm = this.searchService.searchTerm;
   categoryFilter = signal<string | null>(null);

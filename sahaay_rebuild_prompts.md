@@ -507,3 +507,83 @@ sahaay/
 | DetectFace CORS errors | Cloud Function not deployed | `CLOUD_VISION_ENABLED = false` skips the call |
 
 <!-- Last updated: 2026-04-22T01:53:00+05:30 -->
+
+<!-- Update 1: Refined at 2026-04-24 13:54:42 -->
+
+<!-- Update 2: Refined at 2026-04-24 13:54:43 -->
+
+<!-- Update 3: Refined at 2026-04-24 13:54:43 -->
+
+<!-- Update 4: Refined at 2026-04-24 13:54:43 -->
+
+<!-- Update 5: Refined at 2026-04-24 13:54:43 -->
+
+<!-- Update 6: Refined at 2026-04-24 13:54:44 -->
+
+<!-- Update 7: Refined at 2026-04-24 13:54:44 -->
+
+<!-- Update 8: Refined at 2026-04-24 13:54:44 -->
+
+<!-- Update 9: Refined at 2026-04-24 13:54:44 -->
+
+<!-- Update 10: Refined at 2026-04-24 13:54:44 -->
+
+<!-- Update 11: Refined at 2026-04-24 13:54:45 -->
+
+<!-- Update 12: Refined at 2026-04-24 13:54:45 -->
+
+<!-- Update 13: Refined at 2026-04-24 13:54:45 -->
+
+<!-- Update 14: Refined at 2026-04-24 13:54:45 -->
+
+<!-- Update 15: Refined at 2026-04-24 13:54:46 -->
+
+<!-- Update 16: Refined at 2026-04-24 13:54:47 -->
+
+<!-- Update 17: Refined at 2026-04-24 13:54:47 -->
+
+<!-- Update 18: Refined at 2026-04-24 13:54:47 -->
+
+<!-- Update 19: Refined at 2026-04-24 13:54:47 -->
+
+<!-- Update 20: Refined at 2026-04-24 13:54:47 -->
+
+<!-- Update 1: Refined at 2026-04-24 13:55:18 -->
+
+<!-- Update 2: Refined at 2026-04-24 13:55:18 -->
+
+<!-- Update 3: Refined at 2026-04-24 13:55:18 -->
+
+<!-- Update 4: Refined at 2026-04-24 13:55:19 -->
+
+<!-- Update 5: Refined at 2026-04-24 13:55:19 -->
+
+<!-- Update 6: Refined at 2026-04-24 13:55:19 -->
+
+<!-- Update 7: Refined at 2026-04-24 13:55:19 -->
+
+<!-- Update 8: Refined at 2026-04-24 13:55:19 -->
+
+<!-- Update 9: Refined at 2026-04-24 13:55:20 -->
+
+<!-- Update 10: Refined at 2026-04-24 13:55:20 -->
+
+<!-- Update 11: Refined at 2026-04-24 13:55:20 -->
+
+<!-- Update 12: Refined at 2026-04-24 13:55:20 -->
+
+<!-- Update 13: Refined at 2026-04-24 13:55:20 -->
+
+<!-- Update 14: Refined at 2026-04-24 13:55:20 -->
+
+<!-- Update 15: Refined at 2026-04-24 13:55:21 -->
+
+<!-- Update 16: Refined at 2026-04-24 13:55:21 -->
+
+<!-- Update 17: Refined at 2026-04-24 13:55:21 -->
+
+<!-- Update 18: Refined at 2026-04-24 13:55:21 -->
+
+<!-- Update 19: Refined at 2026-04-24 13:55:21 -->
+
+<!-- Update 20: Refined at 2026-04-24 13:55:21 -->

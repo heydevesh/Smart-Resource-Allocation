@@ -298,7 +298,7 @@ import { NgoDocument } from '../../models';
           }
 
           <!-- Step 2: Aadhaar & Face Verification -->
-          @if (currentStep() === 2) {
+          @if (currentStep() === 2 && !registrationSuccess()) {
             <div class="form-section">
               <h2 class="section-title">Identity Verification</h2>
 
@@ -427,12 +427,19 @@ import { NgoDocument } from '../../models';
               </div>
 
               <div class="btn-row">
-                <button type="button" class="back-btn" (click)="currentStep.set(1)">
-                  <mat-icon fontSet="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">arrow_back</mat-icon> Back
-                </button>
-                <button type="button" class="submit-btn" [disabled]="!canSubmit() || submitting()"
-                  (click)="submitRegistration()">
-                  @if (submitting()) {
+              <button type="button" class="back-btn" (click)="prevStep()">
+                <mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+                Back
+              </button>
+              
+              <button type="button" class="skip-btn" (click)="submitRegistration(true)" [disabled]="submitting()">
+                Skip for now
+              </button>
+
+              <button type="button" class="submit-btn" 
+                      [disabled]="submitting() || !aadhaarFile()"
+                      (click)="submitRegistration(false)">
+                @if (submitting()) {
                     <span class="btn-spinner"></span> Submitting...
                   } @else {
                     Submit Application
@@ -441,8 +448,32 @@ import { NgoDocument } from '../../models';
               </div>
             </div>
           }
+
+          <!-- Success State -->
+          @if (registrationSuccess()) {
+            <div class="success-screen">
+              <div class="success-icon">
+                <mat-icon fontSet="material-symbols-rounded">task_alt</mat-icon>
+              </div>
+              <h2 class="success-title">Application Submitted!</h2>
+              <p class="success-message">
+                Your profile has been successfully created and submitted for verification. 
+                Our team will review your application shortly.
+              </p>
+              <div class="info-card">
+                <mat-icon fontSet="material-symbols-rounded">info</mat-icon>
+                <p>You will receive a notification once your account is activated.</p>
+              </div>
+              <button class="login-btn" (click)="router.navigate(['/auth'])">
+                <mat-icon fontSet="material-symbols-rounded" style="margin-right: 8px;">login</mat-icon>
+                Go back and login
+              </button>
+            </div>
+          }
         </div>
-        <p class="login-footer">Already registered? <a class="footer-link" (click)="router.navigate(['/auth'])">Sign in</a></p>
+        @if (!registrationSuccess()) {
+          <p class="login-footer">Already registered? <a class="footer-link" (click)="router.navigate(['/auth'])">Sign in</a></p>
+        }
       </main>
     </div>
   `,
@@ -460,6 +491,9 @@ export class RegisterComponent {
   currentStep = signal(0);
   steps = ['Personal', 'Role & Skills', 'Verification'];
 
+  nextStep() { this.currentStep.update(s => s + 1); }
+  prevStep() { this.currentStep.update(s => s - 1); }
+
   aadhaarNumber = '';
   aadhaarFile = signal<File | null>(null);
   aadhaarImageDataUrl = signal('');
@@ -467,6 +501,7 @@ export class RegisterComponent {
   faceCaptured = signal(false);
   faceDataUrl = signal('');
   submitting = signal(false);
+  registrationSuccess = signal(false);
   ngoCertFile = signal<File | null>(null);
 
   // Verification state
@@ -727,7 +762,7 @@ export class RegisterComponent {
     return commonValid;
   }
 
-  async submitRegistration() {
+  async submitRegistration(skipped: boolean = false) {
     const user = this.auth.currentUser;
     if (!user) { this.snackBar.open('Session expired. Please sign in again.', 'OK', { duration: 3000 }); return; }
 
@@ -756,15 +791,14 @@ export class RegisterComponent {
         ngoRegistrationNumber: r.ngoRegistrationNumber || '',
         ngoEmail: r.ngoEmail || '',
         aadhaarNumber: this.aadhaarNumber.replace(/\s/g, ''),
-        faceVerified,
-        faceMatchConfidence: faceResult?.confidence ?? 0,
-        ocrConfidence: this.ocrResult()?.confidence ?? 0,
-        verificationStatus: faceVerified ? 'approved' : 'pending',
+        faceVerified: skipped ? false : faceVerified,
+        faceMatchConfidence: skipped ? 0 : (faceResult?.confidence ?? 0),
+        ocrConfidence: skipped ? 0 : (this.ocrResult()?.confidence ?? 0),
+        verificationStatus: (faceVerified && !skipped) ? 'approved' : 'pending',
         isRegistered: true,
         registrationCompletedAt: new Date()
       });
 
-      // If NGO Founder, register the NGO entity
       if ((r.preferredRole === 'ngo_founder' || r.preferredRole === 'ngo_admin') && this.ngoCertFile()) {
         const ngoId = await this.ngoRegistry.registerNgo({
           name: r.ngoName,
@@ -795,8 +829,11 @@ export class RegisterComponent {
         await this.firestoreService.updateUserProfile(user.uid, { ngoId });
       }
 
-      this.snackBar.open('Registration submitted! Redirecting...', 'OK', { duration: 2000 });
-      setTimeout(() => this.router.navigate(['/verification-status']), 1500);
+      this.registrationSuccess.set(true);
+      // Explicitly sign out the user after ALL registration steps are complete
+      // This forces them to 'Go back and login' as requested by the user
+      await this.auth.signOut();
+      this.snackBar.open('Registration complete! Please sign in.', 'OK', { duration: 5000 });
     } catch (e) {
       console.error(e);
       this.snackBar.open('Registration failed. Please try again.', 'OK', { duration: 4000 });

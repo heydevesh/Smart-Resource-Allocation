@@ -2,15 +2,15 @@ package verification
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
 
+	"cloud.google.com/go/vertexai/genai"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 	"sahaay.io/functions/middleware"
-
-	"cloud.google.com/go/vertexai/genai"
 )
 
 func init() {
@@ -38,84 +38,6 @@ type OcrResponse struct {
 	AadhaarNumber string `json:"aadhaarNumber"`
 	DOB           string `json:"dob"`
 	Gender        string `json:"gender"`
-}
-
-func OcrAadhaar(w http.ResponseWriter, r *http.Request) {
-	// CORS and Auth
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	_, err := middleware.VerifyIDToken(r)
-	if err != nil {
-		http.Error(w, "Unauthenticated", http.StatusUnauthorized)
-		return
-	}
-
-	var reqWrapper OcrRequestWrapper
-	if err := json.NewDecoder(r.Body).Decode(&reqWrapper); err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-	req := reqWrapper.GetRequest()
-
-	ctx := context.Background()
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if projectID == "" {
-		projectID = "sahaay-18eb3"
-	}
-
-	client, err := genai.NewClient(ctx, projectID, "us-west1")
-	if err != nil {
-		http.Error(w, "Failed to init Gemini", http.StatusInternalServerError)
-		return
-	}
-	defer client.Close()
-
-	model := client.GenerativeModel("gemini-2.0-flash")
-	model.ResponseSchema = &genai.Schema{
-		Type: genai.TypeObject,
-		Properties: map[string]*genai.Schema{
-			"aadhaarNumber": {Type: genai.TypeString, Description: "12 digit Aadhaar number extracted from the ID card, no spaces"},
-			"dob":           {Type: genai.TypeString, Description: "Date of birth extracted from ID card"},
-			"gender":        {Type: genai.TypeString, Description: "Gender extracted from ID card (male/female/other)"},
-		},
-	}
-	model.ResponseMIMEType = "application/json"
-
-	imageData := strings.TrimPrefix(req.ImageBase64, "data:image/jpeg;base64,")
-	imageData = strings.TrimPrefix(imageData, "data:image/png;base64,")
-
-	prompt := genai.Text("Extract the Aadhaar number, DOB, and Gender from this ID card.")
-
-	resp, err := model.GenerateContent(ctx,
-		prompt,
-		genai.ImageData("image/jpeg", []byte(imageData)),
-	)
-
-	if err != nil {
-		http.Error(w, "Failed to process image", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
-		part := resp.Candidates[0].Content.Parts[0]
-		if text, ok := part.(genai.Text); ok {
-			// Wrap in "data" object for Firebase Callable protocol
-			responseBody := map[string]json.RawMessage{
-				"data": json.RawMessage(text),
-			}
-			json.NewEncoder(w).Encode(responseBody)
-			return
-		}
-	}
-
-	http.Error(w, "Empty response from model", http.StatusInternalServerError)
 }
 
 type KYCRequest struct {
@@ -148,13 +70,116 @@ type KYCResponse struct {
 	Error         string  `json:"error,omitempty"`
 }
 
-func VerifyKYC(w http.ResponseWriter, r *http.Request) {
-	// CORS and Auth
+func setCORS(w http.ResponseWriter, r *http.Request) bool {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-	if r.Method == "OPTIONS" {
+	if requested := r.Header.Get("Access-Control-Request-Headers"); requested != "" {
+		w.Header().Set("Access-Control-Allow-Headers", requested)
+	} else {
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID")
+	}
+	w.Header().Set("Vary", "Access-Control-Request-Headers")
+
+	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
+		return true
+	}
+	return false
+}
+
+func decodeDataURL(dataURL string) (string, []byte, error) {
+	mimeType := "image/jpeg"
+	data := strings.TrimSpace(dataURL)
+
+	if strings.HasPrefix(data, "data:image/png;base64,") {
+		mimeType = "image/png"
+		data = strings.TrimPrefix(data, "data:image/png;base64,")
+	} else if strings.HasPrefix(data, "data:image/jpeg;base64,") {
+		mimeType = "image/jpeg"
+		data = strings.TrimPrefix(data, "data:image/jpeg;base64,")
+	} else if strings.HasPrefix(data, "data:image/jpg;base64,") {
+		mimeType = "image/jpeg"
+		data = strings.TrimPrefix(data, "data:image/jpg;base64,")
+	}
+
+	imgBytes, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return "", nil, err
+	}
+	return mimeType, imgBytes, nil
+}
+
+func OcrAadhaar(w http.ResponseWriter, r *http.Request) {
+	if setCORS(w, r) {
+		return
+	}
+
+	_, err := middleware.VerifyIDToken(r)
+	if err != nil {
+		http.Error(w, "Unauthenticated", http.StatusUnauthorized)
+		return
+	}
+
+	var reqWrapper OcrRequestWrapper
+	if err := json.NewDecoder(r.Body).Decode(&reqWrapper); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	req := reqWrapper.GetRequest()
+
+	mimeType, imgBytes, err := decodeDataURL(req.ImageBase64)
+	if err != nil {
+		http.Error(w, "Invalid base64 image", http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		projectID = "sahaay-18eb3"
+	}
+
+	client, err := genai.NewClient(ctx, projectID, "us-west1")
+	if err != nil {
+		http.Error(w, "Failed to init Gemini", http.StatusInternalServerError)
+		return
+	}
+	defer client.Close()
+
+	model := client.GenerativeModel("gemini-2.0-flash")
+	model.ResponseSchema = &genai.Schema{
+		Type: genai.TypeObject,
+		Properties: map[string]*genai.Schema{
+			"aadhaarNumber": {Type: genai.TypeString, Description: "12 digit Aadhaar number extracted from the ID card, no spaces"},
+			"dob":           {Type: genai.TypeString, Description: "Date of birth extracted from ID card"},
+			"gender":        {Type: genai.TypeString, Description: "Gender extracted from ID card (male/female/other)"},
+		},
+	}
+	model.ResponseMIMEType = "application/json"
+
+	prompt := genai.Text("Extract the Aadhaar number, DOB, and Gender from this ID card.")
+	resp, err := model.GenerateContent(ctx, prompt, genai.ImageData(mimeType, imgBytes))
+	if err != nil {
+		http.Error(w, "Failed to process image", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
+		if text, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
+			responseBody := map[string]json.RawMessage{
+				"data": json.RawMessage(text),
+			}
+			_ = json.NewEncoder(w).Encode(responseBody)
+			return
+		}
+	}
+
+	http.Error(w, "Empty response from model", http.StatusInternalServerError)
+}
+
+func VerifyKYC(w http.ResponseWriter, r *http.Request) {
+	if setCORS(w, r) {
 		return
 	}
 
@@ -170,6 +195,17 @@ func VerifyKYC(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req := reqWrapper.GetRequest()
+
+	aadhaarMime, aadhaarBytes, err := decodeDataURL(req.AadhaarImageBase64)
+	if err != nil {
+		http.Error(w, "Invalid base64 Aadhaar image", http.StatusBadRequest)
+		return
+	}
+	selfieMime, selfieBytes, err := decodeDataURL(req.SelfieImageBase64)
+	if err != nil {
+		http.Error(w, "Invalid base64 selfie image", http.StatusBadRequest)
+		return
+	}
 
 	ctx := context.Background()
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
@@ -198,22 +234,16 @@ func VerifyKYC(w http.ResponseWriter, r *http.Request) {
 	}
 	model.ResponseMIMEType = "application/json"
 
-	aadhaarData := strings.TrimPrefix(req.AadhaarImageBase64, "data:image/jpeg;base64,")
-	aadhaarData = strings.TrimPrefix(aadhaarData, "data:image/png;base64,")
-	selfieData := strings.TrimPrefix(req.SelfieImageBase64, "data:image/jpeg;base64,")
-	selfieData = strings.TrimPrefix(selfieData, "data:image/png;base64,")
-
 	prompt := genai.Text("You are an expert KYC verification agent. You have been provided with an image of an Aadhaar ID card and a selfie of a person. Extract the Aadhaar number, DOB, and Gender from the ID card. Then, compare the photo on the Aadhaar card with the provided selfie to determine if they are the same person.")
 
-	// Note: First image is Aadhaar, Second is Selfie
-	resp, err := model.GenerateContent(ctx,
+	resp, err := model.GenerateContent(
+		ctx,
 		prompt,
 		genai.Text("Image 1 (Aadhaar Card):"),
-		genai.ImageData("image/jpeg", []byte(aadhaarData)),
+		genai.ImageData(aadhaarMime, aadhaarBytes),
 		genai.Text("Image 2 (Selfie):"),
-		genai.ImageData("image/jpeg", []byte(selfieData)),
+		genai.ImageData(selfieMime, selfieBytes),
 	)
-
 	if err != nil {
 		http.Error(w, "Failed to process images", http.StatusInternalServerError)
 		return
@@ -221,13 +251,11 @@ func VerifyKYC(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
-		part := resp.Candidates[0].Content.Parts[0]
-		if text, ok := part.(genai.Text); ok {
-			// Wrap in "data" object for Firebase Callable protocol
+		if text, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
 			responseBody := map[string]json.RawMessage{
 				"data": json.RawMessage(text),
 			}
-			json.NewEncoder(w).Encode(responseBody)
+			_ = json.NewEncoder(w).Encode(responseBody)
 			return
 		}
 	}
