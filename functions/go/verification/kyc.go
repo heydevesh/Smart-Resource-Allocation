@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"cloud.google.com/go/vertexai/genai"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
+	"google.golang.org/genai"
 	"sahaay.io/functions/config"
 	"sahaay.io/functions/middleware"
 )
@@ -142,40 +142,53 @@ func OcrAadhaar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	client, err := genai.NewClient(ctx, config.Project, config.GeminiLocation)
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		Project:  config.GeminiProject,
+		Location: config.GeminiLocation,
+		Backend:  genai.BackendVertexAI,
+	})
 	if err != nil {
 		http.Error(w, "Failed to init Gemini", http.StatusInternalServerError)
 		return
 	}
-	defer client.Close()
 
-	model := client.GenerativeModel(config.GeminiModel)
-	model.ResponseSchema = &genai.Schema{
-		Type: genai.TypeObject,
-		Properties: map[string]*genai.Schema{
-			"aadhaarNumber": {Type: genai.TypeString, Description: "12 digit Aadhaar number extracted from the ID card, no spaces"},
-			"dob":           {Type: genai.TypeString, Description: "Date of birth extracted from ID card"},
-			"gender":        {Type: genai.TypeString, Description: "Gender extracted from ID card (male/female/other)"},
+	prompt := "Extract the Aadhaar number, DOB, and Gender from this ID card."
+
+	contents := []*genai.Content{
+		{
+			Parts: []*genai.Part{
+				genai.NewPartFromText(prompt),
+				genai.NewPartFromBytes(imgBytes, mimeType),
+			},
+			Role: "user",
 		},
 	}
-	model.ResponseMIMEType = "application/json"
 
-	prompt := genai.Text("Extract the Aadhaar number, DOB, and Gender from this ID card.")
-	resp, err := model.GenerateContent(ctx, prompt, genai.ImageData(mimeType, imgBytes))
+	genCfg := &genai.GenerateContentConfig{
+		ResponseSchema: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"aadhaarNumber": {Type: genai.TypeString, Description: "12 digit Aadhaar number extracted from the ID card, no spaces"},
+				"dob":           {Type: genai.TypeString, Description: "Date of birth extracted from ID card"},
+				"gender":        {Type: genai.TypeString, Description: "Gender extracted from ID card (male/female/other)"},
+			},
+		},
+		ResponseMIMEType: "application/json",
+	}
+
+	resp, err := client.Models.GenerateContent(ctx, config.GeminiModel, contents, genCfg)
 	if err != nil {
 		http.Error(w, "Failed to process image", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
-		if text, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
-			responseBody := map[string]json.RawMessage{
-				"result": json.RawMessage(text),
-			}
-			_ = json.NewEncoder(w).Encode(responseBody)
-			return
+	if resp != nil {
+		responseBody := map[string]json.RawMessage{
+			"result": json.RawMessage(resp.Text()),
 		}
+		_ = json.NewEncoder(w).Encode(responseBody)
+		return
 	}
 
 	http.Error(w, "Empty response from model", http.StatusInternalServerError)
@@ -211,51 +224,59 @@ func VerifyKYC(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	client, err := genai.NewClient(ctx, config.Project, config.GeminiLocation)
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		Project:  config.GeminiProject,
+		Location: config.GeminiLocation,
+		Backend:  genai.BackendVertexAI,
+	})
 	if err != nil {
 		http.Error(w, "Failed to init Gemini", http.StatusInternalServerError)
 		return
 	}
-	defer client.Close()
 
-	model := client.GenerativeModel(config.GeminiModel)
-	model.ResponseSchema = &genai.Schema{
-		Type: genai.TypeObject,
-		Properties: map[string]*genai.Schema{
-			"aadhaarNumber": {Type: genai.TypeString, Description: "12 digit Aadhaar number extracted from the ID card, no spaces"},
-			"dob":           {Type: genai.TypeString, Description: "Date of birth extracted from ID card"},
-			"gender":        {Type: genai.TypeString, Description: "Gender extracted from ID card (male/female/other)"},
-			"faceMatched":   {Type: genai.TypeBoolean, Description: "True if the person in the selfie matches the person in the ID card photo"},
-			"confidence":    {Type: genai.TypeNumber, Description: "Confidence score between 0.0 and 100.0 for the face match"},
-			"error":         {Type: genai.TypeString, Description: "Any error or issue detected (e.g. no face found)"},
+	prompt := "You are an expert KYC verification agent. You have been provided with an image of an Aadhaar ID card and a selfie of a person. Extract the Aadhaar number, DOB, and Gender from the ID card. Then, compare the photo on the Aadhaar card with the provided selfie to determine if they are the same person."
+
+	contents := []*genai.Content{
+		{
+			Parts: []*genai.Part{
+				genai.NewPartFromText(prompt),
+				genai.NewPartFromText("Image 1 (Aadhaar Card):"),
+				genai.NewPartFromBytes(aadhaarBytes, aadhaarMime),
+				genai.NewPartFromText("Image 2 (Selfie):"),
+				genai.NewPartFromBytes(selfieBytes, selfieMime),
+			},
+			Role: "user",
 		},
 	}
-	model.ResponseMIMEType = "application/json"
 
-	prompt := genai.Text("You are an expert KYC verification agent. You have been provided with an image of an Aadhaar ID card and a selfie of a person. Extract the Aadhaar number, DOB, and Gender from the ID card. Then, compare the photo on the Aadhaar card with the provided selfie to determine if they are the same person.")
+	genCfg := &genai.GenerateContentConfig{
+		ResponseSchema: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"aadhaarNumber": {Type: genai.TypeString, Description: "12 digit Aadhaar number extracted from the ID card, no spaces"},
+				"dob":           {Type: genai.TypeString, Description: "Date of birth extracted from ID card"},
+				"gender":        {Type: genai.TypeString, Description: "Gender extracted from ID card (male/female/other)"},
+				"faceMatched":   {Type: genai.TypeBoolean, Description: "True if the person in the selfie matches the person in the ID card photo"},
+				"confidence":    {Type: genai.TypeNumber, Description: "Confidence score between 0.0 and 100.0 for the face match"},
+				"error":         {Type: genai.TypeString, Description: "Any error or issue detected (e.g. no face found)"},
+			},
+		},
+		ResponseMIMEType: "application/json",
+	}
 
-	resp, err := model.GenerateContent(
-		ctx,
-		prompt,
-		genai.Text("Image 1 (Aadhaar Card):"),
-		genai.ImageData(aadhaarMime, aadhaarBytes),
-		genai.Text("Image 2 (Selfie):"),
-		genai.ImageData(selfieMime, selfieBytes),
-	)
+	resp, err := client.Models.GenerateContent(ctx, config.GeminiModel, contents, genCfg)
 	if err != nil {
 		http.Error(w, "Failed to process images", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
-		if text, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
-			responseBody := map[string]json.RawMessage{
-				"result": json.RawMessage(text),
-			}
-			_ = json.NewEncoder(w).Encode(responseBody)
-			return
+	if resp != nil {
+		responseBody := map[string]json.RawMessage{
+			"result": json.RawMessage(resp.Text()),
 		}
+		_ = json.NewEncoder(w).Encode(responseBody)
+		return
 	}
 
 	http.Error(w, "Empty response from model", http.StatusInternalServerError)

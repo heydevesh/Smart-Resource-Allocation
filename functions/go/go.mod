@@ -5,11 +5,11 @@ go 1.26.2
 require (
 	cloud.google.com/go/aiplatform v1.124.0
 	cloud.google.com/go/firestore v1.22.0
-	cloud.google.com/go/vertexai v0.19.0
 	cloud.google.com/go/vision v1.2.0
 	cloud.google.com/go/vision/v2 v2.12.0
 	firebase.google.com/go/v4 v4.19.0
 	github.com/GoogleCloudPlatform/functions-framework-go v1.9.2
+	google.golang.org/genai v1.54.0
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -58,7 +58,6 @@ require (
 	go.opentelemetry.io/otel/sdk v1.43.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.1 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
@@ -70,7 +69,6 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/api v0.276.0 // indirect
 	google.golang.org/appengine/v2 v2.0.6 // indirect
-	google.golang.org/genai v1.54.0 // indirect
 	google.golang.org/genproto v0.0.0-20260420184626-e10c466a9529 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260420184626-e10c466a9529 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260420184626-e10c466a9529 // indirect

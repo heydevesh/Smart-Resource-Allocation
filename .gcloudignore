@@ -10,6 +10,12 @@ package.json
 package-lock.json
 tsconfig.json
 angular.json
+skills
+.agent
+.agents
+.claude
+.cursor
+tmp
 
 # Allow dist and config files
 !dist/sahaay/browser

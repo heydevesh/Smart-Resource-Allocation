@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/vertexai/genai"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
+	"google.golang.org/genai"
 	"sahaay.io/functions/config"
 	"sahaay.io/functions/middleware"
 )
@@ -52,6 +52,29 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
+func fallbackResultForIntent(intent string) any {
+	switch intent {
+	case "MATCH_VOLUNTEERS":
+		return []map[string]any{}
+	case "PREDICT_SURGE":
+		return []map[string]any{}
+	case "NARRATE_REPORT":
+		return map[string]any{
+			"headline":  "Sahaay Weekly Operations Snapshot",
+			"narrative": "Field teams are actively coordinating open needs across Mumbai clusters while volunteer mobilization remains steady. The dashboard remains operational and ready for incident triage, assignment, and follow-up reporting.",
+			"keyStats":  []string{"Using fallback narrative due to agent service unavailability"},
+		}
+	case "QUERY_ASSISTANT":
+		return map[string]any{
+			"answer": "AI assistant is temporarily unavailable. Please retry in a few moments.",
+		}
+	default:
+		return map[string]any{
+			"message": "AI service is temporarily unavailable",
+		}
+	}
+}
+
 func writeJSONError(w http.ResponseWriter, status int, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -67,11 +90,11 @@ func setCORSHeaders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 	w.Header().Set("Access-Control-Max-Age", "3600")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Firebase-AppCheck, X-Firebase-Client, X-Firebase-GMPID, Firebase-Instance-ID-Token, X-Requested-With")
-	
+
 	if origin != "*" {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
-	
+
 	w.Header().Set("Vary", "Origin, Access-Control-Request-Headers")
 }
 
@@ -123,7 +146,7 @@ No jargon. Write for a Mumbai CSR team.`
 		return `You are the Sahaay coordinator assistant.
 Input will be a JSON object with question and context.
 Return concise plain-English answer in JSON: { "answer": string }`
-	default: // Orchestrator
+	default:
 		return `You are the Sahaay NGO coordination AI.
 Input: JSON with fields intent (string) and payload (object).
 Delegate to the correct specialist based on intent:
@@ -176,57 +199,62 @@ func CallAgent(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[INFO] Agent Request: uid=%s intent=%s sessionId=%s", uid, req.Intent, req.SessionID)
 
 	ctx := context.Background()
-	client, err := genai.NewClient(ctx, config.Project, config.GeminiLocation)
+
+	// Use the new Google Gen AI SDK (google.golang.org/genai) with Vertex AI backend.
+	// Replaces the deprecated cloud.google.com/go/vertexai/genai package.
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		Project:  config.GeminiProject,
+		Location: config.GeminiLocation,
+		Backend:  genai.BackendVertexAI,
+	})
 	if err != nil {
 		log.Printf("[ERROR] Failed to init genai client: %v", err)
 		writeJSONError(w, http.StatusInternalServerError, "Internal AI service error")
 		return
 	}
-	defer client.Close()
-
-	model := client.GenerativeModel(config.GeminiModel)
-	model.SystemInstruction = &genai.Content{
-		Parts: []genai.Part{genai.Text(getSystemPromptForIntent(req.Intent))},
-	}
-	model.ResponseMIMEType = "application/json"
 
 	payloadBytes, _ := json.Marshal(req.Payload)
 	prompt := fmt.Sprintf("Process this payload:\n%s", string(payloadBytes))
 
-	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
-	if err != nil || len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+	contents := []*genai.Content{
+		{
+			Parts: []*genai.Part{genai.NewPartFromText(prompt)},
+			Role:  "user",
+		},
+	}
+
+	genCfg := &genai.GenerateContentConfig{
+		SystemInstruction: &genai.Content{
+			Parts: []*genai.Part{genai.NewPartFromText(getSystemPromptForIntent(req.Intent))},
+		},
+		ResponseMIMEType: "application/json",
+	}
+
+	resp, err := client.Models.GenerateContent(ctx, config.GeminiModel, contents, genCfg)
+	if err != nil || resp == nil {
 		log.Printf("[ERROR] Agent query failed: intent=%s error=%v", req.Intent, err)
-
-		// Specific fallback for NARRATE_REPORT
-		if req.Intent == "NARRATE_REPORT" {
-			latency := time.Since(start).String()
-			log.Printf("[WARN] Narrator agent failed, serving fallback narrative")
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(AgentResponse{
-				Result: map[string]any{
-					"headline":  "Sahaay Weekly Operations Snapshot",
-					"narrative": "Field teams are actively coordinating open needs across Mumbai clusters while volunteer mobilization remains steady. The dashboard remains operational and ready for incident triage, assignment, and follow-up reporting.",
-					"keyStats":  []string{"Using fallback narrative due to agent service unavailability"},
-				},
-				AgentUsed: req.Intent,
-				Latency:   latency,
-			})
-			return
-		}
-
-		writeJSONError(w, http.StatusInternalServerError, "AI Agent failure")
+		latency := time.Since(start).String()
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(AgentResponse{
+			Result:    fallbackResultForIntent(req.Intent),
+			AgentUsed: req.Intent,
+			Latency:   latency,
+		})
 		return
 	}
 
-	responseText := ""
-	if part, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
-		responseText = string(part)
-	}
+	responseText := resp.Text()
 
 	var jsonResult any
 	if err := json.Unmarshal([]byte(responseText), &jsonResult); err != nil {
-		log.Printf("[ERROR] Failed to parse JSON from AI: %s", responseText)
-		writeJSONError(w, http.StatusInternalServerError, "Invalid format from AI")
+		log.Printf("[ERROR] Failed to parse JSON from AI (raw=%s): %v", responseText, err)
+		latency := time.Since(start).String()
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(AgentResponse{
+			Result:    fallbackResultForIntent(req.Intent),
+			AgentUsed: req.Intent,
+			Latency:   latency,
+		})
 		return
 	}
 

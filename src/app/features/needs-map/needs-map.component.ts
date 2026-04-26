@@ -11,7 +11,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { NeedBottomSheetComponent } from '../../shared/components/need-bottom-sheet/need-bottom-sheet.component';
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
 import { ReportNeedComponent } from '../../modals/report-need/report-need.component';
-import { MarkerClusterer } from '@googlemaps/markerclusterer';
+import { MarkerClusterer, Marker as ClusterMarker } from '@googlemaps/markerclusterer';
 
 @Component({
   selector: 'app-needs-map',
@@ -469,12 +469,12 @@ import { MarkerClusterer } from '@googlemaps/markerclusterer';
 })
 export class NeedsMapComponent implements AfterViewInit {
   @ViewChild('mapContainer') mapElement!: ElementRef;
-  
+
   private firestore = inject(FirestoreService);
   private mapsService = inject(MapsService);
   private bottomSheet = inject(MatBottomSheet);
   private dialog = inject(MatDialog);
-  
+
   needs = toSignal(this.firestore.getOpenNeeds(), { initialValue: [] });
   filter = signal<string>('all');
   searchTerm = signal<string>('');
@@ -483,17 +483,18 @@ export class NeedsMapComponent implements AfterViewInit {
   filteredNeeds = computed(() => {
     const term = this.searchTerm().toLowerCase();
     const activeFilter = this.filter();
-    
+
     return this.needs().filter(n => {
       const matchesSearch = n.title.toLowerCase().includes(term) || n.description.toLowerCase().includes(term);
-      const matchesFilter = activeFilter === 'all' || 
+      const matchesFilter = activeFilter === 'all' ||
                            (activeFilter === 'critical' ? n.urgency === 'critical' : n.category === activeFilter);
       return matchesSearch && matchesFilter;
     });
   });
-  
+
   private map?: google.maps.Map;
-  private markers: google.maps.Marker[] = [];
+  private mapInitialized = false;
+  private markers: ClusterMarker[] = [];
   private heatmap?: google.maps.visualization.HeatmapLayer;
   private markerClusterer?: MarkerClusterer;
 
@@ -504,27 +505,37 @@ export class NeedsMapComponent implements AfterViewInit {
 
     // Must be in constructor (injection context) — not ngAfterViewInit
     effect(() => {
-      if (this.mapsService.isLoaded() && this.mapElement) {
-        this.initMap();
+      if (this.mapsService.isLoaded() && this.mapElement && !this.mapInitialized) {
+        void this.initMap();
       }
     });
   }
 
   ngAfterViewInit() {
     // ViewChild is now available — if maps already loaded, init
-    if (this.mapsService.isLoaded()) {
-      this.initMap();
+    if (this.mapsService.isLoaded() && !this.mapInitialized) {
+      void this.initMap();
     }
   }
 
-  private initMap() {
-    this.map = this.mapsService.createMap(this.mapElement.nativeElement, {
-      zoom: 13,
-      center: { lat: 19.0760, lng: 72.8777 }, // Mumbai default
-      mapId: 'SAHAAY_MAP_ID'
-    });
+  private async initMap(): Promise<void> {
+    if (this.mapInitialized || !this.mapElement?.nativeElement) {
+      return;
+    }
 
-    this.updateMarkers(this.needs());
+    this.mapInitialized = true;
+    try {
+      this.map = await this.mapsService.createMap(this.mapElement.nativeElement, {
+        zoom: 13,
+        center: { lat: 19.0760, lng: 72.8777 }, // Mumbai default
+        mapId: 'SAHAAY_MAP_ID'
+      });
+
+      this.updateMarkers(this.needs());
+    } catch (error) {
+      this.mapInitialized = false;
+      console.error('Failed to initialize map:', error);
+    }
   }
 
   private updateMarkers(needs: Need[]) {
@@ -533,7 +544,7 @@ export class NeedsMapComponent implements AfterViewInit {
     if (this.markerClusterer) {
       this.markerClusterer.clearMarkers();
     }
-    this.markers.forEach(m => m.setMap(null));
+    this.markers.forEach(m => this.detachMarker(m));
     this.markers = [];
 
     const filteredNeeds = needs.filter(n => {
@@ -543,24 +554,84 @@ export class NeedsMapComponent implements AfterViewInit {
     });
 
     filteredNeeds.forEach(need => {
-      const marker = new google.maps.Marker({
-        position: { lat: need.lat, lng: need.lng },
+      this.markers.push(this.createMarkerForNeed(need));
+    });
+
+    // Update layers
+    this.updateMapLayers();
+  }
+
+  private createMarkerForNeed(need: Need): ClusterMarker {
+    const position: google.maps.LatLngLiteral = { lat: need.lat, lng: need.lng };
+    const color = this.getColorForUrgency(need.urgency);
+
+    if (google.maps.marker?.AdvancedMarkerElement && google.maps.marker?.PinElement) {
+      const pin = new google.maps.marker.PinElement({
+        background: color,
+        borderColor: '#ffffff',
+        glyphColor: '#ffffff',
+        scale: this.getPinScaleForUrgency(need.urgency),
+      });
+
+      const marker = new google.maps.marker.AdvancedMarkerElement({
+        position,
         title: need.title,
-        icon: this.getIconForUrgency(need.urgency)
+        content: pin.element,
       });
 
       marker.addListener('click', () => {
         this.openNeedDetail(need);
       });
 
-      this.markers.push(marker);
+      return marker;
+    }
+
+    const marker = new google.maps.Marker({
+      position,
+      title: need.title,
+      icon: this.getIconForUrgency(need.urgency),
     });
-    
-    // Update layers
-    this.updateMapLayers();
+
+    marker.addListener('click', () => {
+      this.openNeedDetail(need);
+    });
+
+    return marker;
   }
 
-  private getIconForUrgency(urgency: string): any {
+  private detachMarker(marker: ClusterMarker): void {
+    if (marker instanceof google.maps.Marker) {
+      marker.setMap(null);
+      return;
+    }
+
+    marker.map = null;
+  }
+
+  private getColorForUrgency(urgency: string): string {
+    const colors: Record<string, string> = {
+      critical: '#ba1a1a',
+      high: '#006c4e',
+      medium: '#a1f2e1',
+      low: '#6b6965',
+    };
+
+    return colors[urgency] || '#0a6b5e';
+  }
+
+  private getPinScaleForUrgency(urgency: string): number {
+    if (urgency === 'critical') {
+      return 1.25;
+    }
+
+    if (urgency === 'high') {
+      return 1.1;
+    }
+
+    return 0.95;
+  }
+
+  private getIconForUrgency(urgency: string): google.maps.Symbol {
     const colors: Record<string, string> = {
       critical: '#ba1a1a',
       high: '#006c4e',
@@ -598,10 +669,10 @@ export class NeedsMapComponent implements AfterViewInit {
       if (this.markerClusterer) {
         this.markerClusterer.clearMarkers();
       } else {
-        this.markers.forEach(m => m.setMap(null));
+        this.markers.forEach(m => this.detachMarker(m));
       }
       const data = this.filteredNeeds().map(n => ({ lat: n.lat, lng: n.lng }));
-      
+
       if (this.heatmap) {
         this.heatmap.setMap(null);
       }
@@ -611,7 +682,7 @@ export class NeedsMapComponent implements AfterViewInit {
       if (this.heatmap) {
         this.heatmap.setMap(null);
       }
-      
+
       if (!this.markerClusterer) {
         this.markerClusterer = new MarkerClusterer({ map: this.map, markers: this.markers });
       } else {

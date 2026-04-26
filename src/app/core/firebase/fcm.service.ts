@@ -100,8 +100,8 @@ export class FcmService implements OnDestroy {
         return;
       }
 
-      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      await navigator.serviceWorker.ready;
+      const existingRegistration = await navigator.serviceWorker.getRegistration('/');
+      const registration = existingRegistration ?? await navigator.serviceWorker.register('/firebase-messaging-sw.js');
 
       const token = await getToken(this.messaging, {
         vapidKey: environment.vapidKey,

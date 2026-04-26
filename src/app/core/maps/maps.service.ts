@@ -8,6 +8,7 @@ import { environment } from '../../../environments/environment';
 export class MapsService {
   isLoaded = signal(false);
   geolocation = new GeolocationService();
+  private mapsReadyPromise: Promise<void> | null = null;
 
   // Mumbai Center (approx Dharavi area)
   readonly defaultCenter: google.maps.LatLngLiteral = { lat: 19.0444, lng: 72.8501 };
@@ -18,7 +19,7 @@ export class MapsService {
 
   private loadMapsScript() {
     // If already loaded, mark and return
-    if (typeof google !== 'undefined' && google.maps) {
+    if (this.hasMapConstructor()) {
       this.isLoaded.set(true);
       return;
     }
@@ -39,27 +40,76 @@ export class MapsService {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=visualization&loading=async`;
     script.defer = true;
     script.setAttribute('data-maps-loader', 'true');
-    script.onload = () => this.isLoaded.set(true);
+    script.onload = () => {
+      this.waitForGoogle();
+    };
     document.head.appendChild(script);
   }
 
   private waitForGoogle() {
-    const check = setInterval(() => {
-      if (typeof google !== 'undefined' && google.maps) {
+    void this.ensureMapsReady()
+      .then(() => {
         this.isLoaded.set(true);
-        clearInterval(check);
-      }
-    }, 500);
+      })
+      .catch((error: unknown) => {
+        console.error('[MapsService] Google Maps failed to initialize:', error);
+      });
   }
 
-  createMap(element: HTMLElement, options?: google.maps.MapOptions): google.maps.Map {
-    return new google.maps.Map(element, {
+  private hasMapConstructor(): boolean {
+    return typeof google !== 'undefined' && !!google.maps && typeof google.maps.Map === 'function';
+  }
+
+  private ensureMapsReady(): Promise<void> {
+    if (this.mapsReadyPromise) {
+      return this.mapsReadyPromise;
+    }
+
+    this.mapsReadyPromise = (async () => {
+      if (typeof google !== 'undefined' && google.maps && typeof google.maps.importLibrary === 'function') {
+        await google.maps.importLibrary('maps');
+        await google.maps.importLibrary('marker');
+      }
+
+      if (this.hasMapConstructor()) {
+        return;
+      }
+
+      for (let attempt = 0; attempt < 100; attempt++) {
+        if (this.hasMapConstructor()) {
+          return;
+        }
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 100);
+        });
+      }
+
+      throw new Error('google.maps.Map constructor not available after script load');
+    })().catch((error: unknown) => {
+      this.mapsReadyPromise = null;
+      throw error;
+    });
+
+    return this.mapsReadyPromise;
+  }
+
+  async createMap(element: HTMLElement, options?: google.maps.MapOptions): Promise<google.maps.Map> {
+    await this.ensureMapsReady();
+
+    const mapOptions: google.maps.MapOptions = {
       center: this.defaultCenter,
       zoom: 13,
       disableDefaultUI: true,
       styles: this.getMapStyles(), // Custom premium styles
       ...options
-    });
+    };
+
+    // mapId-managed maps must not receive local styles.
+    if (mapOptions.mapId) {
+      delete mapOptions.styles;
+    }
+
+    return new google.maps.Map(element, mapOptions);
   }
 
   private getMapStyles(): google.maps.MapTypeStyle[] {
