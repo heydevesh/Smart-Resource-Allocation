@@ -115,15 +115,28 @@ export class ReportNeedComponent {
   async detectLocation() {
     this.isDetectingLocation = true;
     try {
+      // Show faster feedback by using cached position if available
+      if (this.geo.currentPosition()) {
+        this.currentCoords = this.geo.currentPosition();
+        if (this.currentCoords) {
+          this.reportForm.patchValue({
+            locationName: `MUM-WARD-${Math.floor(Math.random() * 24) + 1} (${this.currentCoords.lat.toFixed(4)}, ${this.currentCoords.lng.toFixed(4)})`
+          });
+        }
+      }
+
+      // Fetch fresh position in background
       const coords = await this.geo.getCurrentPosition();
       this.currentCoords = coords;
-
       this.reportForm.patchValue({
         locationName: `MUM-WARD-${Math.floor(Math.random() * 24) + 1} (${this.currentCoords.lat.toFixed(4)}, ${this.currentCoords.lng.toFixed(4)})`
       });
     } catch (error) {
       console.error('Location error:', error);
-      this.reportForm.patchValue({ locationName: 'Location detection failed. Please enter manually.' });
+      // Still allow submission with last known location
+      if (!this.currentCoords) {
+        this.reportForm.patchValue({ locationName: 'Location detection failed. Please enter manually.' });
+      }
     } finally {
       this.isDetectingLocation = false;
     }

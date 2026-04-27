@@ -2,12 +2,14 @@ import { Component, inject, signal, effect, ElementRef, ViewChild, AfterViewInit
 import { CommonModule } from '@angular/common';
 import { FirestoreService } from '../../core/firebase/firestore.service';
 import { MapsService } from '../../core/maps/maps.service';
+import { GeolocationService } from '../../core/maps/geolocation.service';
 import { Need } from '../../models';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { NeedBottomSheetComponent } from '../../shared/components/need-bottom-sheet/need-bottom-sheet.component';
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
 import { ReportNeedComponent } from '../../modals/report-need/report-need.component';
@@ -16,7 +18,7 @@ import { MarkerClusterer, Marker as ClusterMarker } from '@googlemaps/markerclus
 @Component({
   selector: 'app-needs-map',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatBottomSheetModule, MatDialogModule, RelativeTimePipe],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatBottomSheetModule, MatDialogModule, MatSnackBarModule, RelativeTimePipe],
   template: `
     <div class="map-wrapper">
       <!-- Map Background with Overlay -->
@@ -472,8 +474,10 @@ export class NeedsMapComponent implements AfterViewInit {
 
   private firestore = inject(FirestoreService);
   private mapsService = inject(MapsService);
+  private geo = inject(GeolocationService);
   private bottomSheet = inject(MatBottomSheet);
   private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
 
   needs = toSignal(this.firestore.getOpenNeeds(), { initialValue: [] });
   filter = signal<string>('all');
@@ -699,11 +703,18 @@ export class NeedsMapComponent implements AfterViewInit {
 
   async centerOnUser() {
     try {
-      const coords = await this.mapsService.geolocation.getCurrentPosition();
+      // Use timeout to prevent indefinite loading
+      const coords = await Promise.race([
+        this.geo.getCurrentPosition(),
+        new Promise<{ lat: number; lng: number }>((_, reject) =>
+          setTimeout(() => reject(new Error('Location timeout')), 5000)
+        )
+      ]);
       this.map?.setCenter(coords);
       this.map?.setZoom(17);
     } catch (error) {
       console.error('Failed to get current location:', error);
+      this.snackBar.open('Location unavailable. Using map center.', 'OK', { duration: 3000 });
     }
   }
 

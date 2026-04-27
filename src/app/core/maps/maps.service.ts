@@ -7,15 +7,15 @@ import { environment } from '../../../environments/environment';
 })
 export class MapsService {
   isLoaded = signal(false);
-  geolocation = new GeolocationService();
+  
+  constructor(private geolocation: GeolocationService) {
+    this.loadMapsScript();
+  }
+
   private mapsReadyPromise: Promise<void> | null = null;
 
   // Mumbai Center (approx Dharavi area)
   readonly defaultCenter: google.maps.LatLngLiteral = { lat: 19.0444, lng: 72.8501 };
-
-  constructor() {
-    this.loadMapsScript();
-  }
 
   private loadMapsScript() {
     // If already loaded, mark and return

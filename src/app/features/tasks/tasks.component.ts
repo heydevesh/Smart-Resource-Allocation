@@ -620,7 +620,13 @@ export class TasksComponent implements OnInit {
     this.snackBar.open('Optimizing route with Google Maps...', '', { duration: 2000 });
 
     try {
-      const currentLoc = await this.geo.getCurrentPosition();
+      // Use timeout to prevent indefinite loading on location acquisition
+      const currentLoc = await Promise.race([
+        this.geo.getCurrentPosition(),
+        new Promise<{ lat: number; lng: number }>((_, reject) =>
+          setTimeout(() => reject(new Error('Location timeout')), 5000)
+        )
+      ]);
       const directionsService = new google.maps.DirectionsService();
       
       const origin = new google.maps.LatLng(currentLoc.lat, currentLoc.lng);

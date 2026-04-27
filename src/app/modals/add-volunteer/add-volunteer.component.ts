@@ -93,12 +93,24 @@ export class AddVolunteerComponent {
 
   getCurrentLocation() {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        this.volunteerForm.patchValue({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-      });
+      // Use timeout to prevent indefinite loading
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.volunteerForm.patchValue({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          // Keep default location, don't block user
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 8000,
+          maximumAge: 5000
+        }
+      );
     }
   }
 
