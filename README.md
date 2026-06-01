@@ -1,6 +1,6 @@
 # Sahaay (सहाय) — Smart Resource Allocation for Mumbai NGOs
 
-Sahaay is a web-spp, offline-capable platform designed to streamline humanitarian efforts in Mumbai. It connects field workers, volunteers, and NGO administrators through a real-time coordination layer powered by Vertex AI and secured by Aadhaar-linked identity verification.
+Sahaay is a web-app, offline-capable platform designed to streamline humanitarian efforts in Mumbai. It connects field workers, volunteers, and NGO administrators through a real-time coordination layer powered by Vertex AI and secured by Aadhaar-linked identity verification.
 
 ---
 
