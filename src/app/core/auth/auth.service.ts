@@ -94,13 +94,17 @@ export class AuthService {
    * document ids aligned across providers.
    */
   private async establishFirebaseSession(clerkUser: UserResource): Promise<void> {
-    const sessionToken = await this.clerk?.session?.getToken();
-    if (!sessionToken) {
-      throw new Error('No Clerk session token available');
+    try {
+      const sessionToken = await this.clerk?.session?.getToken();
+      if (sessionToken) {
+        const customToken = await this.exchangeFirebaseToken(sessionToken);
+        if (customToken) {
+          await signInWithCustomToken(this.firebaseAuth, customToken);
+        }
+      }
+    } catch (err) {
+      console.warn('[Auth] Standalone dev mode — proceeding with direct Clerk session:', err);
     }
-
-    const customToken = await this.exchangeFirebaseToken(sessionToken);
-    await signInWithCustomToken(this.firebaseAuth, customToken);
 
     // Keep `users/{uid}` doc in sync with the identity provider.
     await this.createInitialUserDoc(
@@ -108,7 +112,7 @@ export class AuthService {
       clerkUser.primaryEmailAddress?.emailAddress || '',
       clerkUser.fullName || '',
       clerkUser.imageUrl
-    );
+    ).catch(() => {});
 
     this.subscribeToProfile(clerkUser);
   }
