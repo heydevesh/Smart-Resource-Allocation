@@ -7,7 +7,7 @@ const DataProject = "sahaay-18eb3"
 const Location = "us-west1"
 // GeminiProject is the GCP project where Gemini publisher models are accessible.
 // This is the main Firebase project where ToS was accepted via Agent Studio.
-const GeminiProject = "sahaay-493113"
+const GeminiProject = "sahaay-26007"
 // GeminiLocation is where Gemini publisher models are available.
 // us-central1 is the primary region for Gemini publisher models in Vertex AI.
 const GeminiLocation = "us-central1"

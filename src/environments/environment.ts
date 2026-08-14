@@ -24,7 +24,7 @@ export const environment = {
 
   // ── Vertex AI / Cloud Functions ──────────────────────────────
   functionsRegion: 'us-west1',
-  vertexAiProject: 'sahaay-493113',
+  vertexAiProject: 'sahaay-26007',
 
   // ── Google Maps JS API ───────────────────────────────────────
   // Obtain from: Google Cloud Console → APIs & Services → Credentials
