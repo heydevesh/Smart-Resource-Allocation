@@ -7,7 +7,7 @@
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore%20%7C%20Storage%20%7C%20FCM-FFCA28?style=flat&logo=firebase&logoColor=black)](https://firebase.google.com/)
 [![Google Maps](https://img.shields.io/badge/Maps-Google%20Maps%20JS-34A853?style=flat&logo=googlemaps&logoColor=white)](https://developers.google.com/maps)
 
-Sahaay is a mobile-first, offline-capable progressive web platform designed for rapid disaster response and grassroots humanitarian coordination across Mumbai's highest-density zones (Dharavi, Kurla, Govandi, Bhandup).
+Sahaay is a mobile-first, offline-capable progressive web platform designed for rapid disaster response and grassroots humanitarian coordination across Mumbai's highest-density urban areas (Dharavi, Kurla, Govandi, Bhandup).
 
 Powered by **Vertex AI multi-agent reasoning**, **Google Vision AI identity verification**, **Clerk authentication**, and **Firebase real-time sync**, Sahaay bridges the gap between ground field workers, volunteer task forces, NGO administrators, and institutional donors.
 
@@ -27,7 +27,7 @@ Powered by **Vertex AI multi-agent reasoning**, **Google Vision AI identity veri
 
 ## 🏗 System Architecture
 
-Sahaay implements a **Federated Multi-Agent Architecture** where sensitive logic (AI reasoning, biometric matching, KYC OCR, token minting) is isolated in security-hardened **Go Cloud Functions** on Cloud Run (us-west1).
+Sahaay implements a **Federated Multi-Agent Architecture** where sensitive logic (AI reasoning, biometric matching, KYC OCR, token minting) is isolated in security-hardened **Go Cloud Functions**.
 
 ```mermaid
 flowchart TD
@@ -43,7 +43,7 @@ flowchart TD
         FbAuth["Firebase Auth (Custom Token Minting)"]
     end
 
-    subgraph Backend["Go Cloud Functions (us-west1 / Cloud Run)"]
+    subgraph Backend["Go Cloud Functions"]
         Middleware["Auth Middleware (JWKS RS256 Verification)"]
         CallAgent["CallAgent Handler"]
         KYC["VerifyKYC & OcrAadhaar"]
@@ -95,7 +95,7 @@ flowchart TD
 | **Frontend Framework** | Angular 18 | Signals, Standalone Components, Material 3, PWA Service Worker |
 | **Authentication** | Clerk (`@clerk/clerk-js`) | Session management, MFA, prebuilt embedded UI, user button |
 | **Identity Bridge** | Go `auth.Client` | Bridges Clerk session JWTs into Firebase custom tokens (`uid == clerkId`) |
-| **Backend Functions** | Go 1.22 (Cloud Functions Gen2) | Fast, memory-efficient microservices on Cloud Run (`us-west1`) |
+| **Backend Functions** | Go 1.22 (Cloud Functions) | Fast, memory-efficient microservices |
 | **AI Multi-Agent Graph** | Vertex AI + Gemini 2.0 Flash | Specialist agents for matching, surge forecasting, reporting, and Q&A |
 | **Identity Verification** | Google Vision AI | Automated Aadhaar OCR extraction and facial landmark matching |
 | **Database & Realtime** | Cloud Firestore | Real-time subscriptions, offline persistence, and compound queries |
@@ -162,9 +162,7 @@ Smart-Resource-Allocation/
 
 * Node.js `^18.19.1 || ^20.11.1 || >=22.0.0` & npm
 * Go `1.22+`
-* Google Cloud SDK (`gcloud`)
-* Clerk account & API Keys
-* Firebase Project (`sahaay-18eb3`)
+* Firebase Project & Clerk account
 
 ### 1. Frontend Setup
 
@@ -194,29 +192,6 @@ go build ./...
 ```bash
 npm run build
 # Production artifacts generated in dist/sahaay
-```
-
----
-
-## ☁️ Deployment
-
-Deploy Go Cloud Functions (Gen2 / Cloud Run) to `us-west1`:
-
-```bash
-cd functions/go
-
-for fn in CallAgent DetectFace VerifyKYC OcrAadhaar ExchangeFirebaseToken; do
-  gcloud functions deploy $fn \
-    --gen2 \
-    --runtime=go122 \
-    --region=us-west1 \
-    --source=. \
-    --entry-point=$fn \
-    --trigger-http \
-    --allow-unauthenticated \
-    --service-account=sahaay-493113@appspot.gserviceaccount.com \
-    --set-env-vars=GOOGLE_CLOUD_PROJECT=sahaay-493113
-done
 ```
 
 ---
