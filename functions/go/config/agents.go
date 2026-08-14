@@ -14,6 +14,11 @@ const GeminiLocation = "us-central1"
 // GeminiModel is the Vertex AI publisher model ID for Gemini.
 // Use "gemini-2.0-flash" (no version suffix) for the latest stable flash model.
 const GeminiModel = "gemini-2.0-flash"
+
+// Clerk authentication (dev instance).
+// JWKS URL serves the public keys used to verify Clerk session JWTs.
+const ClerkIssuer = "https://classic-slug-92.clerk.accounts.dev"
+const ClerkJWKSURL = "https://classic-slug-92.clerk.accounts.dev/.well-known/jwks.json"
 const OrchestratorAgentID = "projects/193319651907/locations/us-west1/reasoningEngines/4322593625159499776"
 // Using Orchestrator as fallback for now.
 const MatchAgentID        = OrchestratorAgentID

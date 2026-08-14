@@ -9,6 +9,8 @@ require (
 	cloud.google.com/go/vision/v2 v2.12.0
 	firebase.google.com/go/v4 v4.19.0
 	github.com/GoogleCloudPlatform/functions-framework-go v1.9.2
+	github.com/MicahParks/keyfunc v1.9.0
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	google.golang.org/genai v1.54.0
 	google.golang.org/protobuf v1.36.11
 )

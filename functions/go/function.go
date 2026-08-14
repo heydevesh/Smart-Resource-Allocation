@@ -3,6 +3,7 @@ package function
 import (
 	"net/http"
 	"sahaay.io/functions/agents"
+	"sahaay.io/functions/middleware"
 	"sahaay.io/functions/verification"
 )
 
@@ -20,4 +21,8 @@ func VerifyKYC(w http.ResponseWriter, r *http.Request) {
 
 func OcrAadhaar(w http.ResponseWriter, r *http.Request) {
 	verification.OcrAadhaar(w, r)
+}
+
+func ExchangeFirebaseToken(w http.ResponseWriter, r *http.Request) {
+	middleware.ExchangeFirebaseToken(w, r)
 }
