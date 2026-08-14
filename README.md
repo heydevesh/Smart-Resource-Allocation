@@ -116,45 +116,6 @@ All AI intents route through the Go `CallAgent` endpoint with typed JSON payload
 | **NarratorAgent** | `NARRATE_REPORT` | Translates raw disaster response metrics into human-centred CSR impact reports |
 | **QueryAgent** | `QUERY_ASSISTANT` | Natural language operational Q&A on active emergency tickets |
 
----
-
-## 📁 Repository Structure
-
-```
-Smart-Resource-Allocation/
-├── src/
-│   ├── app/
-│   │   ├── auth/                    # Clerk login and profile registration flows
-│   │   ├── app-shell/               # Main layout, sidebar navigation, Clerk UserButton
-│   │   ├── core/
-│   │   │   ├── ai/                  # AgentService & Zod response schemas
-│   │   │   ├── auth/                # AuthService (Clerk + Firebase bridge & guards)
-│   │   │   ├── firebase/            # HttpCallService, Firestore, FCM, Storage
-│   │   │   ├── ngo/                 # NGO registry & onboarding logic
-│   │   │   └── verification/        # Aadhaar OCR & Face match client service
-│   │   ├── features/
-│   │   │   ├── home/                # Real-time command center dashboard
-│   │   │   ├── needs-map/           # Interactive crisis map & heatmap
-│   │   │   ├── tasks/               # Task Force CRUD lifecycle & assignments
-│   │   │   ├── volunteers/          # Volunteer roster & smart match modal
-│   │   │   ├── resource-vault/      # Inventory & document management
-│   │   │   ├── ngo-registry/        # Verified NGO directory
-│   │   │   └── insights/            # Operational analytics & surge forecast
-│   │   └── shared/                  # Reusable UI cards, badges, dialogs, pipes
-│   └── environments/                # Environment configs (Clerk, Firebase, GCP)
-├── functions/go/
-│   ├── agents/                      # Orchestrator & GenAI Vertex integration
-│   ├── config/                      # Agent IDs, GCP project configs & Clerk URLs
-│   ├── middleware/                  # Clerk JWKS token validation & token exchange
-│   ├── verification/                # Aadhaar OCR (Vision AI) & Face matching
-│   └── function.go                  # HTTP Cloud Function entry points
-├── angular.json                     # Angular build & bundle configuration
-├── firestore.rules                  # Firestore security rules based on auth.uid
-├── package.json                     # Frontend dependencies
-└── AGENTS.md                        # Master development rules & AI specifications
-```
-
----
 
 ## 🚀 Getting Started
 
