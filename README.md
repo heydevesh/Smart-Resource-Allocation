@@ -13,7 +13,7 @@ Powered by **Vertex AI multi-agent reasoning**, **Google Vision AI identity veri
 
 ---
 
-## 🎯 The Core Problem & Solution
+## The Core Problem & Solution
 
 * **The Problem:** Grassroots NGOs and disaster responders rely on fragmented WhatsApp threads and manual logbooks. Volunteer allocation is reactive, urgent crisis needs get buried, and relief verification lacks accountability.
 * **The Solution:** A unified operational intelligence dashboard:
@@ -25,7 +25,7 @@ Powered by **Vertex AI multi-agent reasoning**, **Google Vision AI identity veri
 
 ---
 
-## 🏗 System Architecture
+## System Architecture
 
 Sahaay implements a **Federated Multi-Agent Architecture** where sensitive logic (AI reasoning, biometric matching, KYC OCR, token minting) is isolated in security-hardened **Go Cloud Functions**.
 
@@ -88,7 +88,7 @@ flowchart TD
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Domain | Technology | Purpose |
 | :--- | :--- | :--- |
@@ -104,7 +104,7 @@ flowchart TD
 
 ---
 
-## 🤖 Vertex AI Multi-Agent Specialist Graph
+## Vertex AI Multi-Agent Specialist Graph
 
 All AI intents route through the Go `CallAgent` endpoint with typed JSON payloads and structured responses:
 
@@ -116,8 +116,9 @@ All AI intents route through the Go `CallAgent` endpoint with typed JSON payload
 | **NarratorAgent** | `NARRATE_REPORT` | Translates raw disaster response metrics into human-centred CSR impact reports |
 | **QueryAgent** | `QUERY_ASSISTANT` | Natural language operational Q&A on active emergency tickets |
 
+---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -157,7 +158,7 @@ npm run build
 
 ---
 
-## 🔐 Security Model & RBAC
+## Security Model & RBAC
 
 1. **Identity & Authentication:** Handled via Clerk with phone/email OTP and session JWTs verified via cryptographic JWKS (`RS256`).
 2. **Firebase Rules Bridge:** `ExchangeFirebaseToken` generates a Firebase custom token matching the Clerk `sub` UID. All Firestore rules validate against `request.auth.uid`.
@@ -170,11 +171,11 @@ npm run build
 
 ---
 
-## 📖 Key Documentation
+## Key Documentation
 
 * [AGENTS.md](./AGENTS.md) — Master AI specification, absolute coding rules, and agent definitions.
 * [DESIGN.md](./DESIGN.md) — Design tokens, color system, typography, and Material 3 components.
 
 ---
 
-© 2026 Sahaay Platform. Built for Mumbai disaster & humanitarian resilience.
+(c) 2026 Sahaay Platform. Built for Mumbai disaster & humanitarian resilience.

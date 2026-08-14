@@ -841,30 +841,30 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 
 | Status | Item                                                 |
 | ------ | ---------------------------------------------------- |
-| ✅     | AGENTS.md rewrite — Vertex AI + Go architecture      |
-| ✅     | NGO Founder role — primary registration path         |
-| ✅     | Angular 18 init + AgentService                       |
-| ✅     | GCP APIs enabled + 5 Vertex AI agents created        |
-| ✅     | Go module init + 4 Functions deployed                |
-| ✅     | IAM Permissions granted (Cross-project AI/Firestore) |
-| ✅     | Cloud Run Auth (Public invoker + Internal Firebase Auth) |
-| ✅     | Clerk Auth + role guards                             |
-| ✅     | Registration Flow — Skip verification + success screen |
-| ✅     | AI Agent Fixes — us-west1 endpoint + input wrapping   |
-| ✅     | Aadhaar KYC + Face Match Backends (Go)               |
-| ✅     | NGO Registry + Resource Vault Services               |
+| [x]    | AGENTS.md rewrite — Vertex AI + Go architecture      |
+| [x]    | NGO Founder role — primary registration path         |
+| [x]    | Angular 18 init + AgentService                       |
+| [x]    | GCP APIs enabled + 5 Vertex AI agents created        |
+| [x]    | Go module init + 4 Functions deployed                |
+| [x]    | IAM Permissions granted (Cross-project AI/Firestore) |
+| [x]    | Cloud Run Auth (Public invoker + Internal Firebase Auth) |
+| [x]    | Clerk Auth + role guards                             |
+| [x]    | Registration Flow — Skip verification + success screen |
+| [x]    | AI Agent Fixes — us-west1 endpoint + input wrapping   |
+| [x]    | Aadhaar KYC + Face Match Backends (Go)               |
+| [x]    | NGO Registry + Resource Vault Services               |
 
-| ✅     | Firestore service + offline persistence              |
-| ✅     | Home tab — real-time dashboard                       |
-| ✅     | Needs Map — Maps + pins + heatmap                    |
-| ✅     | Tasks tab — CRUD lifecycle                           |
-| ✅     | Volunteers tab — profiles + smart match UI           |
-| ✅     | Insights tab — charts + AI cards                     |
-| ✅     | Firebase Extensions — Gemini Summarise/Translate     |
-| ✅     | Vector search — Firestore triggers + embeddings      |
-| ✅     | FCM push notifications                               |
-| ✅     | PWA service worker                                   |
-| ✅     | Seed data — 20 Mumbai needs, 15 volunteers, 30 tasks |
+| [x]    | Firestore service + offline persistence              |
+| [x]    | Home tab — real-time dashboard                       |
+| [x]    | Needs Map — Maps + pins + heatmap                    |
+| [x]    | Tasks tab — CRUD lifecycle                           |
+| [x]    | Volunteers tab — profiles + smart match UI           |
+| [x]    | Insights tab — charts + AI cards                     |
+| [x]    | Firebase Extensions — Gemini Summarise/Translate     |
+| [x]    | Vector search — Firestore triggers + embeddings      |
+| [x]    | FCM push notifications                               |
+| [x]    | PWA service worker                                   |
+| [x]    | Seed data — 20 Mumbai needs, 15 volunteers, 30 tasks |
 
 ---
 
@@ -893,3 +893,4 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 13. `ng build` + `ng lint` after every component. Never 300+ lines without a compile check.
 14. Commit format: `feat(agents): add Go CallAgent with Vertex AI orchestrator routing`
 15. No `cat`/`grep` for edits. Use agent-native file tools for all modifications.
+16. NEVER use emojis in code, commits, documentation, markdown files, responses, or messages across any project. Strictly prohibited.
