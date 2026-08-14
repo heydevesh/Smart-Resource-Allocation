@@ -17,6 +17,11 @@ export const environment = {
   //              → Web Push certificates → Key pair → Copy
   vapidKey: 'BMOzRqdJ5T4w2JcoDmjrP4juRu14WG6IyH4Qdg0KMuxQ-1KNJYZMLpeAnFcS8W2becXp8aeDOMcn5Co_26NhGeQ',
 
+  // ── Clerk Authentication ────────────────────────────────────
+  // From: Clerk Dashboard → API Keys → Publishable key
+  clerkPublishableKey: 'pk_test_Y2xhc3NpYy1zbHVnLTkyLmNsZXJrLmFjY291bnRzLmRldiQ',
+  clerkDomain: 'https://classic-slug-92.clerk.accounts.dev',
+
   // ── Vertex AI / Cloud Functions ──────────────────────────────
   functionsRegion: 'us-west1',
   vertexAiProject: 'sahaay-493113',

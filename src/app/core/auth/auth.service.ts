@@ -1,15 +1,32 @@
-import { Injectable, inject } from '@angular/core';
-import { Auth, authState, User as FirebaseUser, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '@angular/fire/auth';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { switchMap, map } from 'rxjs/operators';
-import { User, UserRole, Permission } from '../../models';
-import { Firestore, doc, docData, getDoc, setDoc } from '@angular/fire/firestore';
-import { getPermissionsForRole } from './permissions';
+import { Injectable, inject, OnDestroy } from '@angular/core';
+import { Clerk } from '@clerk/clerk-js';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 
+type UserResource = NonNullable<Clerk['user']>;
+import { map } from 'rxjs/operators';
+import { User, UserRole, Permission } from '../../models';
+import { Firestore, doc, docData, getDoc, setDoc, DocumentData } from '@angular/fire/firestore';
+import { Auth as FirebaseAuth, signInWithCustomToken, signOut as firebaseSignOut } from '@angular/fire/auth';
+import { getPermissionsForRole } from './permissions';
+import { environment } from '../../../environments/environment';
+
+/**
+ * Clerk-backed auth service.
+ *
+ * Clerk is the source of truth for the user-facing session. Firebase Auth is
+ * kept purely as an internal bridge so Firestore security rules (which only
+ * understand Firebase identity) keep working: the Clerk session JWT is
+ * exchanged for a Firebase custom token by the `ExchangeFirebaseToken` Go
+ * function, then `signInWithCustomToken` establishes a Firebase session whose
+ * UID equals the Clerk user ID.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private auth = inject(Auth);
+  private firebaseAuth = inject(FirebaseAuth);
   private firestore = inject(Firestore);
+
+  private clerk: Clerk | null = null;
+  private clerkReady: Promise<void> | null = null;
 
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
@@ -27,64 +44,152 @@ export class AuthService {
     return val === undefined ? null : val;
   }
 
-  constructor() {
-    authState(this.auth).pipe(
-      switchMap((user: FirebaseUser | null) => {
-        if (user) {
-          return docData(doc(this.firestore, `users/${user.uid}`)).pipe(
-            map(userData => {
-              if (!userData || !userData['isRegistered']) {
-                // User exists in Firebase Auth but has no complete Firestore profile
-                this._isNewUser = true;
-                return {
-                  uid: user.uid,
-                  email: user.email || '',
-                  displayName: user.displayName || '',
-                  photoURL: user.photoURL || '',
-                  role: 'applicant' as UserRole,
-                  permissions: getPermissionsForRole('applicant'),
-                  verificationStatus: 'pending',
-                  isRegistered: false
-                } as User;
-              }
+  /** Raw Clerk instance — used to mount Clerk's UI components (SignIn, UserButton). */
+  get clerkInstance(): Clerk | null { return this.clerk; }
 
-              this._isNewUser = false;
-              const role = userData['role'] || 'applicant';
-              return {
-                uid: user.uid,
-                email: user.email || '',
-                displayName: userData['displayName'] || user.displayName || 'Unknown',
-                photoURL: userData['photoURL'] || user.photoURL || '',
-                role: role,
-                permissions: getPermissionsForRole(role),
-                region: userData['region'],
-                verificationStatus: userData['verificationStatus'] || 'pending',
-                phone: userData['phone'],
-                skills: userData['skills'],
-                idProofUrl: userData['idProofUrl'],
-                availability: userData['availability'],
-                aadhaarNumber: userData['aadhaarNumber'],
-                faceVerified: userData['faceVerified'],
-                facePhotoUrl: userData['facePhotoUrl'],
-                languages: userData['languages'],
-                dateOfBirth: userData['dateOfBirth'],
-                gender: userData['gender'],
-                address: userData['address'],
-                ngoAffiliation: userData['ngoAffiliation'],
-                ngoLogoUrl: userData['ngoLogoUrl'],
-                fcmToken: userData['fcmToken'],
-                isRegistered: true
-              } as User;
-            })
-          );
-        } else {
-          this._isNewUser = false;
-          return of(null);
-        }
-      })
+  /** Resolves once Clerk has loaded and the initial auth state has been emitted. */
+  get ready(): Promise<void> {
+    this.initClerk();
+    return this.clerkReady!;
+  }
+
+  constructor() {
+    this.initClerk();
+  }
+
+  private initClerk(): void {
+    if (this.clerkReady) return;
+
+    this.clerkReady = (async () => {
+      this.clerk = new Clerk(environment.clerkPublishableKey);
+      await this.clerk.load();
+
+      this.clerk.addListener(({ user }) => {
+        this.onClerkUserChange(user);
+      });
+
+      // Emit the initial state synchronously after load.
+      this.onClerkUserChange(this.clerk.user);
+    })().catch((err) => {
+      console.error('[Auth] Clerk failed to load', err);
+      this.currentUserSubject.next(null);
+    });
+  }
+
+  private onClerkUserChange(clerkUser: UserResource | null | undefined): void {
+    if (!clerkUser) {
+      this._isNewUser = false;
+      this.currentUserSubject.next(null);
+      return;
+    }
+    this.establishFirebaseSession(clerkUser).catch((err) => {
+      console.error('[Auth] Firebase bridge failed', err);
+    });
+  }
+
+  /**
+   * Bridges the Clerk session into Firebase so Firestore rules work:
+   * exchange Clerk JWT → Firebase custom token → signInWithCustomToken.
+   * The custom-token UID equals the Clerk user ID, keeping `users/{uid}`
+   * document ids aligned across providers.
+   */
+  private async establishFirebaseSession(clerkUser: UserResource): Promise<void> {
+    const sessionToken = await this.clerk?.session?.getToken();
+    if (!sessionToken) {
+      throw new Error('No Clerk session token available');
+    }
+
+    const customToken = await this.exchangeFirebaseToken(sessionToken);
+    await signInWithCustomToken(this.firebaseAuth, customToken);
+
+    // Keep `users/{uid}` doc in sync with the identity provider.
+    await this.createInitialUserDoc(
+      clerkUser.id,
+      clerkUser.primaryEmailAddress?.emailAddress || '',
+      clerkUser.fullName || '',
+      clerkUser.imageUrl
+    );
+
+    this.subscribeToProfile(clerkUser);
+  }
+
+  private subscribeToProfile(clerkUser: UserResource): void {
+    docData(doc(this.firestore, `users/${clerkUser.id}`)).pipe(
+      map(userData => this.mapFirestoreProfile(clerkUser, userData))
     ).subscribe(user => {
       this.currentUserSubject.next(user);
     });
+  }
+
+  private mapFirestoreProfile(clerkUser: UserResource, userData: Record<string, any> | undefined): User | null {
+    if (!userData || !userData['isRegistered']) {
+      // User exists in Clerk but has no complete Firestore profile yet.
+      this._isNewUser = true;
+      return {
+        uid: clerkUser.id,
+        email: clerkUser.primaryEmailAddress?.emailAddress || '',
+        displayName: clerkUser.fullName || '',
+        photoURL: clerkUser.imageUrl || '',
+        role: 'applicant' as UserRole,
+        permissions: getPermissionsForRole('applicant'),
+        verificationStatus: 'pending',
+        isRegistered: false
+      } as User;
+    }
+
+    this._isNewUser = false;
+    const role = userData['role'] || 'applicant';
+    return {
+      uid: clerkUser.id,
+      email: clerkUser.primaryEmailAddress?.emailAddress || userData['email'] || '',
+      displayName: userData['displayName'] || clerkUser.fullName || 'Unknown',
+      photoURL: userData['photoURL'] || clerkUser.imageUrl || '',
+      role: role,
+      permissions: getPermissionsForRole(role),
+      region: userData['region'],
+      verificationStatus: userData['verificationStatus'] || 'pending',
+      phone: userData['phone'],
+      skills: userData['skills'],
+      idProofUrl: userData['idProofUrl'],
+      availability: userData['availability'],
+      aadhaarNumber: userData['aadhaarNumber'],
+      faceVerified: userData['faceVerified'],
+      facePhotoUrl: userData['facePhotoUrl'],
+      languages: userData['languages'],
+      dateOfBirth: userData['dateOfBirth'],
+      gender: userData['gender'],
+      address: userData['address'],
+      ngoAffiliation: userData['ngoAffiliation'],
+      ngoLogoUrl: userData['ngoLogoUrl'],
+      fcmToken: userData['fcmToken'],
+      isRegistered: true
+    } as User;
+  }
+
+  /**
+   * Calls the Go `ExchangeFirebaseToken` function with the Clerk session JWT
+   * as a Bearer token and returns the minted Firebase custom token.
+   */
+  private async exchangeFirebaseToken(clerkJwt: string): Promise<string> {
+    const baseUrl = `https://${environment.functionsRegion}-${environment.vertexAiProject}.cloudfunctions.net`;
+    const res = await fetch(`${baseUrl}/ExchangeFirebaseToken`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${clerkJwt}`,
+      },
+      body: JSON.stringify({ data: {} }),
+    });
+    if (!res.ok) {
+      throw new Error(`Token exchange failed (${res.status})`);
+    }
+    const json = await res.json();
+    return json.customToken ?? json.result?.customToken;
+  }
+
+  /** Current Clerk session JWT — sent to Go functions as a Bearer token. */
+  async getSessionToken(): Promise<string | null> {
+    return this.clerk?.session?.getToken() ?? null;
   }
 
   /** Check if a Firestore user doc exists for the given UID */
@@ -112,40 +217,10 @@ export class AuthService {
     }
   }
 
-  async loginWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(this.auth, provider);
-    // Create initial doc if user is new
-    await this.createInitialUserDoc(
-      result.user.uid,
-      result.user.email || '',
-      result.user.displayName || '',
-      result.user.photoURL || ''
-    );
-    return result;
-  }
-
-  async loginWithEmail(email: string, pass: string) {
-    const normalizedEmail = this.normalizeEmail(email);
-    const result = await signInWithEmailAndPassword(this.auth, normalizedEmail, pass);
-    return result;
-  }
-
-  async registerWithEmail(email: string, pass: string) {
-    const normalizedEmail = this.normalizeEmail(email);
-    const result = await createUserWithEmailAndPassword(this.auth, normalizedEmail, pass);
-    await this.createInitialUserDoc(
-      result.user.uid,
-      result.user.email || '',
-      result.user.displayName || '',
-      result.user.photoURL || ''
-    );
-    return result;
-  }
-
   async signOut() {
     this._isNewUser = false;
-    await this.auth.signOut();
+    await firebaseSignOut(this.firebaseAuth).catch(() => {});
+    await this.clerk?.signOut();
     this.currentUserSubject.next(null);
   }
 

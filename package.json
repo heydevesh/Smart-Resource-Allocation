@@ -12,7 +12,7 @@
   "dependencies": {
     "@angular/animations": "^18.2.0",
     "@angular/cdk": "^18.2.0",
-    "@angular/common": "^18.2.0",
+    "@angular/common": "^18.2.14",
     "@angular/compiler": "^18.2.0",
     "@angular/core": "^18.2.0",
     "@angular/fire": "^18.0.0",
@@ -22,6 +22,7 @@
     "@angular/platform-browser": "^18.2.0",
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",
+    "@clerk/clerk-js": "^6.29.0",
     "@googlemaps/markerclusterer": "^2.6.2",
     "firebase": "^10.14.1",
     "rxjs": "~7.8.0",

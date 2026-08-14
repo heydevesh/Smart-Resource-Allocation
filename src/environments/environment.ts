@@ -20,6 +20,12 @@ export const environment = {
   // ── Firebase App Check ───────────────────────────────────────
   // Obtain from: Firebase Console → App Check → Project Settings
 
+  // ── Clerk Authentication ────────────────────────────────────
+  // From: Clerk Dashboard → API Keys → Publishable key
+  // Clerk JS session JWTs are issued by this Frontend API domain.
+  clerkPublishableKey: 'pk_test_Y2xhc3NpYy1zbHVnLTkyLmNsZXJrLmFjY291bnRzLmRldiQ',
+  clerkDomain: 'https://classic-slug-92.clerk.accounts.dev',
+
   // ── Vertex AI / Cloud Functions ──────────────────────────────
   functionsRegion: 'us-west1',
   vertexAiProject: 'sahaay-493113',

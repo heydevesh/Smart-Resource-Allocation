@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth } from '@angular/fire/auth';
+import { AuthService } from '../auth/auth.service';
 import { environment } from '../../../environments/environment';
 
 const BASE_URL = `https://${environment.functionsRegion}-${environment.vertexAiProject}.cloudfunctions.net`;
@@ -7,17 +7,12 @@ const BASE_URL = `https://${environment.functionsRegion}-${environment.vertexAiP
 /**
  * Low-level helper for calling Cloud Functions in a cross-project setup.
  *
- * AngularFire's `httpsCallable(fns, 'NAME')` auto-attaches the Firebase Auth
- * token only when using a *named* function.  Passing a full URL bypasses that
- * mechanism and the token is **not** sent, causing 401 Unauthenticated errors.
- *
- * This service manually retrieves the ID token and injects it as a Bearer
- * header before every request, matching the Firebase callable wire protocol
- * so the Go middleware can verify it.
+ * Attaches the current Clerk session JWT as a Bearer token so Go middleware
+ * can verify it.
  */
 @Injectable({ providedIn: 'root' })
 export class HttpCallService {
-  private auth = inject(Auth);
+  private auth = inject(AuthService);
 
   /**
    * Call a Cloud Function by name (relative to the AI project base URL).
@@ -25,7 +20,7 @@ export class HttpCallService {
    * Firebase callable protocol and unwraps `{ result: ... }` in the response.
    */
   async call<Req, Res>(functionName: string, payload: Req): Promise<Res> {
-    const token = await this.auth.currentUser?.getIdToken();
+    const token = await this.auth.getSessionToken();
     if (!token) {
       throw new Error(`Not authenticated — cannot call ${functionName}`);
     }
