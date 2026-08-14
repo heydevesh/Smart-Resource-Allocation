@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -162,9 +162,7 @@ import { OfflineBannerComponent } from '../shared/components/offline-banner/offl
               <button mat-icon-button class="action-btn" (click)="chatSidenav.toggle()">
                 <mat-icon class="ai-spark">colors_spark</mat-icon>
               </button>
-              <div class="profile-avatar">
-                <img [src]="user()?.photoURL || 'https://i.pravatar.cc/150?u=sahaay'" alt="Profile">
-              </div>
+              <div #clerkUserButton class="profile-avatar-clerk"></div>
             </div>
           </header>
 
@@ -478,18 +476,12 @@ import { OfflineBannerComponent } from '../shared/components/offline-banner/offl
       color: #742fe5;
     }
 
-    .profile-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 2px solid var(--color-primary-light);
-    }
-
-    .profile-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .profile-avatar-clerk {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      min-height: 36px;
     }
 
     .page-content {
@@ -566,15 +558,30 @@ import { OfflineBannerComponent } from '../shared/components/offline-banner/offl
     }
   `]
 })
-export class AppShellComponent {
+export class AppShellComponent implements AfterViewInit, OnDestroy {
   protected auth = inject(AuthService);
   private dialog = inject(MatDialog);
   protected searchService = inject(SearchService);
   private fcm = inject(FcmService);
   user = toSignal(this.auth.currentUser$);
 
+  @ViewChild('clerkUserButton') clerkUserButtonRef?: ElementRef<HTMLDivElement>;
+
   constructor() {
     this.fcm.init();
+  }
+
+  async ngAfterViewInit() {
+    await this.auth.ready;
+    if (this.clerkUserButtonRef?.nativeElement && this.auth.clerkInstance) {
+      this.auth.clerkInstance.mountUserButton(this.clerkUserButtonRef.nativeElement);
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.clerkUserButtonRef?.nativeElement && this.auth.clerkInstance) {
+      this.auth.clerkInstance.unmountUserButton(this.clerkUserButtonRef.nativeElement);
+    }
   }
 
   onSearch(event: Event) {
