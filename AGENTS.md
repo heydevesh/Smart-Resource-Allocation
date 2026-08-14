@@ -26,7 +26,7 @@
 | 2   | Gemini 2.0 Flash              | Powers all agents                                           |
 | 3   | Firebase Cloud Functions (Go) | Security-hardened Go backends: AI Agents, Aadhaar KYC, Face Match |
 | 4   | Firebase Firestore            | Real-time listeners, offline persistence, vector search     |
-| 5   | Firebase Auth                 | Phone OTP + email, role guards, token verified in Go        |
+| 5   | Clerk + Firebase Auth bridge  | Clerk session JWTs + Go custom token bridge for Firestore rules |
 | 6   | Firebase Extensions           | Zero-code: photo→urgency, translate, summarise, chatbot     |
 | 7   | Firebase Cloud Messaging      | Push alerts for critical unassigned needs                   |
 | 8   | Firebase Storage              | Photos, ID docs, generated PDFs                             |
@@ -45,13 +45,14 @@ All AI and Identity calls live in Go Cloud Functions. Angular never calls Gemini
 
 ```
 Angular Services
-  │  httpsCallable('CallAgent' | 'DetectFace' | 'VerifyKYC' | 'OcrAadhaar')
+  │  httpCall('CallAgent' | 'DetectFace' | 'VerifyKYC' | 'OcrAadhaar' | 'ExchangeFirebaseToken')
   ▼
 Go Cloud Functions (us-west1)
-  │  1. Verify Firebase ID token
+  │  1. Verify Clerk session JWT (JWKS + RS256)
   │  2. AI: Route intent → Vertex Agent
   │  3. KYC: Vision AI → Aadhaar Extraction
   │  4. Face: Recognition → Identity Verification
+  │  5. Bridge: ExchangeFirebaseToken mints Firebase custom token for UID
   ▼
 Vertex AI Agent Engine / Google Vision AI
   ├─▶ MatchAgent     MATCH_VOLUNTEERS
@@ -237,31 +238,74 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
+	"github.com/MicahParks/keyfunc"
+	"github.com/golang-jwt/jwt/v4"
+	"sahaay.io/functions/config"
 )
 
-var authClient *auth.Client
+var firebaseAuthClient *auth.Client
+var clerkJWKS *keyfunc.JWKS
 
 func init() {
-	app, _ := firebase.NewApp(context.Background(), nil)
-	authClient, _ = app.Auth(context.Background())
+	ctx := context.Background()
+	app, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: config.DataProject})
+	if err == nil {
+		firebaseAuthClient, _ = app.Auth(ctx)
+	}
+
+	loadCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	clerkJWKS, err = keyfunc.Get(config.ClerkJWKSURL, keyfunc.Options{
+		Ctx:             loadCtx,
+		RefreshInterval: time.Hour,
+	})
+	if err != nil {
+		log.Printf("[AUTH] Failed to load Clerk JWKS: %v", err)
+	}
+
+	functions.HTTP("ExchangeFirebaseToken", ExchangeFirebaseToken)
 }
 
 func VerifyIDToken(r *http.Request) (string, error) {
+	if clerkJWKS == nil {
+		return "", fmt.Errorf("Clerk JWKS not initialized")
+	}
+
 	header := r.Header.Get("Authorization")
 	if !strings.HasPrefix(header, "Bearer ") {
 		return "", fmt.Errorf("missing Bearer token")
 	}
-	token, err := authClient.VerifyIDToken(r.Context(), strings.TrimPrefix(header, "Bearer "))
-	if err != nil {
-		return "", err
+	tokenStr := strings.TrimPrefix(header, "Bearer ")
+
+	parser := jwt.NewParser(jwt.WithValidMethods([]string{"RS256"}))
+	claims := &jwt.RegisteredClaims{}
+	token, err := parser.ParseWithClaims(tokenStr, claims, clerkJWKS.Keyfunc)
+	if err != nil || !token.Valid {
+		return "", fmt.Errorf("invalid Clerk token: %w", err)
 	}
-	return token.UID, nil
+
+	if !claims.VerifyIssuer(config.ClerkIssuer, true) {
+		return "", fmt.Errorf("invalid issuer: got %s, want %s", claims.Issuer, config.ClerkIssuer)
+	}
+
+	if claims.Subject == "" {
+		return "", fmt.Errorf("missing sub claim")
+	}
+	return claims.Subject, nil
+}
+
+func ExchangeFirebaseToken(w http.ResponseWriter, r *http.Request) {
+	// CORS handling, verify Clerk JWT, mint Firebase custom token via firebaseAuthClient.CustomToken(r.Context(), uid)
 }
 ```
 
@@ -355,27 +399,28 @@ func agentForIntent(intent string) string {
 }
 ```
 
-### Identity Verification Entry Points
+### Identity & Backend Entry Points
 
-| Function      | Purpose                                      | Model / API        |
-| ------------- | -------------------------------------------- | ------------------ |
-| `OcrAadhaar`  | Extract Name, DOB, Aadhaar No from photo     | Google Vision AI   |
-| `DetectFace`  | Extract facial embeddings from ID + Selfie   | Vision AI (Face)   |
-| `VerifyKYC`   | Compute similarity + verify Aadhaar checksum | Go Logic           |
-| `CallAgent`   | Bridge to Vertex AI Agent Engine             | Gemini 2.0 Flash   |
+| Function                | Purpose                                      | Model / API        |
+| ----------------------- | -------------------------------------------- | ------------------ |
+| `OcrAadhaar`            | Extract Name, DOB, Aadhaar No from photo     | Google Vision AI   |
+| `DetectFace`            | Extract facial embeddings from ID + Selfie   | Vision AI (Face)   |
+| `VerifyKYC`             | Compute similarity + verify Aadhaar checksum | Go Logic           |
+| `CallAgent`             | Bridge to Vertex AI Agent Engine             | Gemini 2.0 Flash   |
+| `ExchangeFirebaseToken` | Mint Firebase custom token from Clerk JWT    | Firebase Auth      |
 
 ### Deploy
 
 ```bash
 cd functions/go
 
-gcloud functions deploy CallAgent DetectFace VerifyKYC OcrAadhaar \
+gcloud functions deploy CallAgent DetectFace VerifyKYC OcrAadhaar ExchangeFirebaseToken \
   --gen2 \
   --runtime=go122 \
   --region=us-west1 \
   --source=. \
   --trigger-http \
-  --no-allow-unauthenticated \
+  --allow-unauthenticated \
   --service-account=sahaay-493113@appspot.gserviceaccount.com \
   --set-env-vars=GOOGLE_CLOUD_PROJECT=sahaay-493113
 ```
@@ -851,11 +896,11 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 ### Vertex AI & Firebase
 
 7. Vertex AI credentials never in Angular. All calls through `CallAgent` Go function only.
-8. Firebase token verified in Go before every Vertex AI call.
+8. Clerk session JWT verified in Go before every Cloud Function invocation.
 9. Write `firestore.rules` for every collection before the service that accesses it.
 10. Zod schema for every agent response. Never parse raw text with regex or string splitting.
 11. App Check configured before any Firebase or agent call is implemented.
-12. Approved Cloud Functions only: `CallAgent`, `DetectFace`, `VerifyKYC`, `OcrAadhaar`. Never add unauthorized public endpoints.
+12. Approved Cloud Functions only: `CallAgent`, `DetectFace`, `VerifyKYC`, `OcrAadhaar`, `ExchangeFirebaseToken`. Never add unauthorized public endpoints.
 
 ### Cost & Workflow
 
