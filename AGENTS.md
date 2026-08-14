@@ -30,12 +30,11 @@
 | 6   | Firebase Extensions           | Zero-code: photo→urgency, translate, summarise, chatbot     |
 | 7   | Firebase Cloud Messaging      | Push alerts for critical unassigned needs                   |
 | 8   | Firebase Storage              | Photos, ID docs, generated PDFs                             |
-| 9   | Firebase App Check            | reCAPTCHA v3                                                |
-| 10  | Cloud Trace                   | Per-agent latency + token usage                             |
-| 11  | Google Maps JS API            | Pin map, heatmap, proximity rings                           |
-| 12  | Google Forms + Sheets API     | NGO survey → Firestore pipeline                             |
-| 13  | Angular 18                    | App framework — standalone components, Signals              |
-| 14  | Angular Material / MDC        | Material Design 3                                           |
+| 9   | Cloud Trace                   | Per-agent latency + token usage                             |
+| 10  | Google Maps JS API            | Pin map, heatmap, proximity rings                           |
+| 11  | Google Forms + Sheets API     | NGO survey → Firestore pipeline                             |
+| 12  | Angular 18                    | App framework — standalone components, Signals              |
+| 13  | Angular Material / MDC        | Material Design 3                                           |
 
 ---
 
@@ -724,20 +723,7 @@ export const roleGuard = (allowedRoles: UserRole[]) =>
 
 ---
 
-## 12. App Check
-
-```typescript
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider(environment.recaptchaSiteKey),
-  isTokenAutoRefreshEnabled: true,
-});
-```
-
-Configure before any Firebase or Vertex AI call is implemented.
-
----
-
-## 13. Design Tokens
+## 12. Design Tokens
 
 ```scss
 :root {
@@ -775,7 +761,7 @@ Configure before any Firebase or Vertex AI call is implemented.
 
 ---
 
-## 14. Routing
+## 13. Routing
 
 ```typescript
 export const routes: Routes = [
@@ -832,7 +818,7 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 
 ---
 
-## 15. Angular Material Mapping
+## 14. Angular Material Mapping
 
 | UI Element          | Component                            |
 | ------------------- | ------------------------------------ |
@@ -851,7 +837,7 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 
 ---
 
-## 16. Development Status
+## 15. Development Status
 
 | Status | Item                                                 |
 | ------ | ---------------------------------------------------- |
@@ -862,7 +848,7 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 | ✅     | Go module init + 4 Functions deployed                |
 | ✅     | IAM Permissions granted (Cross-project AI/Firestore) |
 | ✅     | Cloud Run Auth (Public invoker + Internal Firebase Auth) |
-| ✅     | Firebase Auth + App Check + role guards              |
+| ✅     | Clerk Auth + role guards                             |
 | ✅     | Registration Flow — Skip verification + success screen |
 | ✅     | AI Agent Fixes — us-west1 endpoint + input wrapping   |
 | ✅     | Aadhaar KYC + Face Match Backends (Go)               |
@@ -882,7 +868,7 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 
 ---
 
-## 17. Absolute Rules
+## 16. Absolute Rules
 
 ### Code
 
@@ -899,12 +885,11 @@ Sub-tabs use `selectedTab = signal('active')`, never child routes.
 8. Clerk session JWT verified in Go before every Cloud Function invocation.
 9. Write `firestore.rules` for every collection before the service that accesses it.
 10. Zod schema for every agent response. Never parse raw text with regex or string splitting.
-11. App Check configured before any Firebase or agent call is implemented.
-12. Approved Cloud Functions only: `CallAgent`, `DetectFace`, `VerifyKYC`, `OcrAadhaar`, `ExchangeFirebaseToken`. Never add unauthorized public endpoints.
+11. Approved Cloud Functions only: `CallAgent`, `DetectFace`, `VerifyKYC`, `OcrAadhaar`, `ExchangeFirebaseToken`. Never add unauthorized public endpoints.
 
 ### Cost & Workflow
 
-13. Firebase Spark plan. Gemini 2.0 Flash free tier. No paid Maps SKUs.
-14. `ng build` + `ng lint` after every component. Never 300+ lines without a compile check.
-15. Commit format: `feat(agents): add Go CallAgent with Vertex AI orchestrator routing`
-16. No `cat`/`grep` for edits. Use agent-native file tools for all modifications.
+12. Firebase Spark plan. Gemini 2.0 Flash free tier. No paid Maps SKUs.
+13. `ng build` + `ng lint` after every component. Never 300+ lines without a compile check.
+14. Commit format: `feat(agents): add Go CallAgent with Vertex AI orchestrator routing`
+15. No `cat`/`grep` for edits. Use agent-native file tools for all modifications.

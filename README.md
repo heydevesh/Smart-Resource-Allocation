@@ -23,7 +23,7 @@ Sahaay is a web-app, offline-capable platform designed to streamline humanitaria
 | **Frontend** | Angular 18 (Signals, Standalone, Material 3) |
 | **Backend** | Go (Cloud Functions), Firebase (Auth, Firestore, Storage) |
 | **Intelligence** | Vertex AI Agent Engine (Gemini 2.0 Flash) |
-| **Security** | Firebase App Check (reCAPTCHA v3), Identity Verification (Aadhaar OCR) |
+| **Security** | Clerk JWT Verification, Identity Verification (Aadhaar OCR) |
 | **Maps** | Google Maps JS API (Heatmaps, Proximity Rings) |
 
 ---
@@ -58,7 +58,7 @@ graph TD
 
 Sahaay implements strict security protocols:
 1. **Identity Verification:** All NGO founders and volunteers must pass Aadhaar-linked KYC.
-2. **App Check:** Enforced at the infrastructure level to block unauthorized API traffic.
+2. **Backend Authentication:** Enforced in Go middleware verifying Clerk session JWTs.
 3. **Role-Based Access:** Granular permissions for Field Workers, Volunteers, Admins, and Founders.
 4. **Data Sovereignty:** Firestore security rules ensure data is only accessible to authorized organizational members.
 

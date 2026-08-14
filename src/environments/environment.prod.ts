@@ -26,9 +26,6 @@ export const environment = {
   functionsRegion: 'us-west1',
   vertexAiProject: 'sahaay-493113',
 
-  // ── Firebase App Check (reCAPTCHA v3) ────────────────────────
-  recaptchaSiteKey: '',
-
   // ── Google Maps JS API ───────────────────────────────────────
   mapsApiKey: 'AIzaSyDO0y2NoC8JUfQ4-HHOMTi4Y-HdybgfoVk',
 };
