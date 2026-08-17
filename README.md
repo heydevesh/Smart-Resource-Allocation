@@ -69,7 +69,7 @@ flowchart TD
     Auth -->|2. Clerk JWT| Exchange
     Exchange -->|3. Verify JWT & Mint| FbAuth
     FbAuth -->|4. Custom Token| FS
-    FS -->|5. Authenticated Rules (request.auth.uid)| Firestore
+    FS -->|"5. Authenticated Rules (request.auth.uid)"| Firestore
 
     UI -->|Bearer Clerk JWT| Middleware
     Middleware --> CallAgent
